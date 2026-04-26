@@ -95,6 +95,8 @@ export default defineConfig({
                         { text: 'Custom Tools', link: '/guide/custom-tools' },
                         { text: 'Lifecycle Hooks', link: '/guide/hooks' },
                         { text: 'Compose & Pipe', link: '/guide/compose' },
+                        { text: 'Vision & Multimodal', link: '/guide/vision' },
+                        { text: 'Planner', link: '/guide/planner' },
                     ],
                 },
                 {
@@ -109,6 +111,17 @@ export default defineConfig({
                     ],
                 },
                 {
+                    text: 'Intelligence',
+                    collapsed: false,
+                    items: [
+                        { text: 'Learning Machine', link: '/guide/learning-machine' },
+                        { text: 'Reasoning (CoT)', link: '/guide/reasoning' },
+                        { text: 'Compression', link: '/guide/compression' },
+                        { text: 'Context Providers', link: '/guide/context-provider' },
+                        { text: 'Scheduler', link: '/guide/scheduler' },
+                    ],
+                },
+                {
                     text: 'Multi-Agent',
                     collapsed: false,
                     items: [
@@ -116,6 +129,14 @@ export default defineConfig({
                         { text: 'Execution Workflows', link: '/guide/workflows' },
                         { text: 'Graph Engine', link: '/guide/graph' },
                         { text: 'LLM Router', link: '/guide/llm-router' },
+                    ],
+                },
+                {
+                    text: 'Output & Media',
+                    collapsed: false,
+                    items: [
+                        { text: 'Artifacts', link: '/guide/artifacts' },
+                        { text: 'Video Generation', link: '/guide/video' },
                     ],
                 },
                 {

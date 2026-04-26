@@ -1856,5 +1856,341 @@ import { InMemoryApprovalStore, createSqliteApprovalStore }            from 'flu
 import { waitForApproval, ApprovalRejectedError }                      from 'fluxion/production';
 import { createTenantContext, TenantScopedSessionStore }               from 'fluxion/production';
 import { RedisRateLimiter }                                             from 'fluxion/production';
+
+// Graph engine
+import { createGraph, DAGEngine, DurableExecutor, NodeKind }           from 'fluxion/graph';
+import { InMemoryEventStore, SqliteEventStore, computeWaves }          from 'fluxion/graph';
+import { BackpressureController, DistributedEngine, GraphWorker }      from 'fluxion/graph';
+
+// Planner
+import { LLMPlanner, ClassicalPlanner, PlanValidator }                 from 'fluxion/planner';
+import { PlanningAlgorithm, TaskPriority }                             from 'fluxion/planner';
+
+// Vision / Multimodal
+import { imageUrl, imageBuffer, imageFile }                            from 'fluxion';
+import { audioFile, audioBuffer, multiModalToMessage }                 from 'fluxion';
+import type { MultiModalInput, ImageUrl, ImageBuffer, ImageFile }      from 'fluxion';
+
+// Artifacts
+import { InMemoryArtifactStorage }                                     from 'fluxion/artifacts';
+import { createTextArtifact, createMarkdownArtifact, createDataArtifact } from 'fluxion/artifacts';
+import { createReasoningArtifact, createPlanArtifact }                 from 'fluxion/artifacts';
+import type { ArtifactStorage, Artifact, ArtifactType }               from 'fluxion/artifacts';
+
+// Learning Machine
+import { LearningMachine, LearningMode }                               from 'fluxion';
+import { InMemoryUserMemoryStore, InMemorySessionContextStore }        from 'fluxion';
+import { InMemoryEntityMemoryStore, InMemoryLearnedKnowledgeStore }    from 'fluxion';
+import { InMemoryUserProfileStore }                                    from 'fluxion';
+
+// Reasoning
+import { ReasoningManager, ReasoningEventType, NextAction }            from 'fluxion';
+import type { ReasoningStep, ReasoningEvent }                          from 'fluxion';
+
+// Compression
+import { CompressionManager }                                          from 'fluxion';
+import type { CompressibleMessage }                                    from 'fluxion';
+
+// Context Providers
+import { ContextProvider, ContextBackend, ContextMode }                from 'fluxion';
+
+// Scheduler
+import { ScheduleManager, InMemoryScheduleStore, validateCronExpr }   from 'fluxion';
+import { InMemoryScheduleRunStore }                                    from 'fluxion';
+
+// Video
+import { VideoOrchestrator }                                           from 'fluxion';
+
+// Testing (graph)
+import { createTestRunner, createMockLLMProvider }                     from 'fluxion/testing';
+import { expectEventSequence, assertExactEventSequence }               from 'fluxion/testing';
 ```
+
+
+---
+
+## Learning Machine
+
+`LearningMachine` is a five-store user profile system. It builds a rich context object from memory, session, entities, learned knowledge, and a user profile before each agent run.
+
+```ts
+import {
+  LearningMachine,
+  InMemoryUserMemoryStore,
+  InMemorySessionContextStore,
+  InMemoryEntityMemoryStore,
+  InMemoryLearnedKnowledgeStore,
+  InMemoryUserProfileStore,
+  LearningMode,
+} from 'fluxion';
+
+const machine = new LearningMachine({
+  userMemoryStore:       new InMemoryUserMemoryStore(),
+  sessionContextStore:   new InMemorySessionContextStore(),
+  entityMemoryStore:     new InMemoryEntityMemoryStore(),
+  learnedKnowledgeStore: new InMemoryLearnedKnowledgeStore(),
+  userProfileStore:      new InMemoryUserProfileStore(),
+  mode:                  LearningMode.ALWAYS,
+  maxMemoryItems:        100,
+  sessionTtlMs:          30 * 60 * 1000,
+});
+
+// Build context before a run
+const ctx = await machine.buildContext('user-123', 'agent-id', {
+  sessionId: 'sess-abc',
+  message:   'What are my preferences?',
+});
+
+// Process a run (persists memory, entities, knowledge as configured)
+const result = await machine.process('user-123', 'agent-id', {
+  message:   'My preferred language is TypeScript.',
+  response:  'Noted — I will remember that you prefer TypeScript.',
+  sessionId: 'sess-abc',
+});
+
+// Recall relevant memories
+const memories = await machine.recall('user-123', 'agent-id', 'programming preferences', 5);
+```
+
+> **Full guide:** [Learning Machine](./learning-machine.md)
+
+---
+
+## Reasoning (Chain-of-Thought)
+
+`ReasoningManager` runs a structured CoT loop and streams typed events.
+
+```ts
+import { ReasoningManager, ReasoningEventType, NextAction } from 'fluxion';
+
+const reasoning = new ReasoningManager({
+  llmProvider: myLlm,
+  maxIterations: 10,
+  timeoutMs: 30_000,
+  streamingEnabled: true,
+});
+
+for await (const event of reasoning.reason('Is 3599 a prime number?')) {
+  if (event.type === ReasoningEventType.THOUGHT) {
+    console.log('Thinking:', event.step?.thought);
+  }
+  if (event.type === ReasoningEventType.FINAL_ANSWER) {
+    console.log('Answer:', event.step?.thought);
+    break;
+  }
+}
+```
+
+`NextAction` values: `CONTINUE`, `FINAL_ANSWER`, `TOOL_CALL`, `PAUSE`, `ABORT`.
+
+> **Full guide:** [Reasoning](./reasoning.md)
+
+---
+
+## Compression
+
+`CompressionManager` summarizes large tool results before they consume context window budget.
+
+```ts
+import { CompressionManager } from 'fluxion';
+
+const compressor = new CompressionManager({
+  llmProvider:    myLlm,
+  maxTokens:      8_000,
+  targetTokens:   2_000,
+  compressionMode: 'aggressive',
+});
+
+if (compressor.shouldCompress(toolResult)) {
+  const summary = await compressor.compress(toolResult, 'web_search');
+  console.log(summary); // concise summary
+}
+
+// Async variant
+const asyncSummary = await compressor.acompress(toolResult, 'database_query');
+```
+
+> **Full guide:** [Compression](./compression.md)
+
+---
+
+## Context Providers
+
+`ContextProvider` and `ContextBackend` are abstract classes for injecting dynamic context (docs, tools, answers) before each agent run.
+
+```ts
+import { ContextProvider, ContextBackend, ContextMode } from 'fluxion';
+
+// Custom provider
+class DocsContextProvider extends ContextProvider {
+  async query(query: string, options?: QueryOptions): Promise<Answer[]> {
+    const docs = await searchDocs(query);
+    return docs.map(d => ({ text: d.content, source: d.url }));
+  }
+}
+
+const provider = new DocsContextProvider({
+  name: 'docs',
+  mode: ContextMode.AGENT, // inject context before every run
+  topK: 5,
+});
+
+// Wire into agent
+const ai = agent({
+  model: 'gpt-4o',
+  instructions: 'You answer questions using the docs.',
+  contextProviders: [provider],
+});
+```
+
+`ContextMode` values: `DEFAULT`, `AGENT`, `TOOLS`.
+
+> **Full guide:** [Context Providers](./context-provider.md)
+
+---
+
+## Scheduler
+
+`ScheduleManager` runs cron jobs that trigger agent tasks on a schedule.
+
+```ts
+import { ScheduleManager, InMemoryScheduleStore, InMemoryScheduleRunStore } from 'fluxion';
+
+const manager = new ScheduleManager({
+  store:    new InMemoryScheduleStore(),
+  runStore: new InMemoryScheduleRunStore(),
+  timezone: 'America/Los_Angeles',
+});
+
+manager.register('daily-report', async (schedule) => {
+  const result = await reportAgent.run('Generate daily summary');
+  console.log('Done:', result.text);
+});
+
+const schedule = await manager.create({
+  id:      'daily-report',
+  name:    'Daily Report',
+  cron:    '0 9 * * *',   // 9 AM every day
+  enabled: true,
+  payload: { format: 'slack' },
+});
+
+await manager.start();
+```
+
+> **Full guide:** [Scheduler](./scheduler.md)
+
+---
+
+## Planner
+
+`ClassicalPlanner` and `LLMPlanner` decompose goals into ordered, dependency-aware task lists.
+
+```ts
+import { ClassicalPlanner, LLMPlanner, PlanValidator, PlanningAlgorithm, TaskPriority } from 'fluxion/planner';
+
+// Classical (deterministic, no LLM)
+const planner = new ClassicalPlanner({ algorithm: PlanningAlgorithm.HIERARCHICAL });
+const plan    = await planner.plan('Launch a product update blog post');
+
+// LLM-driven (flexible, handles novel goals)
+const llmPlanner = new LLMPlanner({ temperature: 0.3 }, myLlmAdapter);
+const plan2      = await llmPlanner.plan('Migrate the monolith to microservices');
+
+// Validate
+const validator = new PlanValidator();
+const { valid, errors } = await validator.validate(plan);
+
+// Iterate
+for (const task of plan.tasks) {
+  console.log(`[${TaskPriority[task.priority]}] ${task.name}`);
+}
+```
+
+> **Full guide:** [Planner](./planner.md)
+
+---
+
+## Vision & Multimodal
+
+Pass images, audio, and files to vision-capable models.
+
+```ts
+import { imageUrl, imageBuffer, imageFile, audioFile, multiModalToMessage } from 'fluxion';
+import type { MultiModalInput } from 'fluxion';
+
+const result = await ai.run('What is in this image?', {
+  multiModal: {
+    text:   'What is in this image?',
+    images: [imageUrl('https://example.com/chart.png', 'high')],
+  },
+});
+
+// From raw bytes
+const bytes = await fs.readFile('./photo.jpg');
+const img   = imageBuffer(bytes, 'image/jpeg');
+
+// Multiple images
+const comparison = {
+  text:   'Compare these charts.',
+  images: [
+    imageUrl('https://cdn.example.com/q1.png'),
+    imageUrl('https://cdn.example.com/q2.png'),
+  ],
+} satisfies MultiModalInput;
+```
+
+> **Full guide:** [Vision & Multimodal](./vision.md)
+
+---
+
+## Artifacts
+
+Typed, versioned outputs with full history.
+
+```ts
+import { InMemoryArtifactStorage, createMarkdownArtifact, createDataArtifact } from 'fluxion/artifacts';
+
+const storage = new InMemoryArtifactStorage();
+
+// Save
+const doc = await storage.save(createMarkdownArtifact('report', '# Q1 Report\n\n...'));
+
+// Version
+const v2 = await storage.update(doc.id, { content: '# Q1 Report (v2)\n\n...' });
+console.log(v2.version); // 2
+
+// Retrieve by version
+const original = await storage.getVersion(doc.id, 1);
+
+// Search
+const results = await storage.search('Q1 market');
+
+// List by type
+const reports = await storage.list({ type: 'markdown', limit: 20 });
+```
+
+> **Full guide:** [Artifacts](./artifacts.md)
+
+---
+
+## Video Generation
+
+Generate YouTube Shorts from a topic string using OpenAI TTS and Pexels footage.
+
+```ts
+import { VideoOrchestrator } from 'fluxion';
+
+const orchestrator = new VideoOrchestrator();
+const result = await orchestrator.generateShort('The history of TypeScript');
+
+if (result.success) {
+  console.log('Video:', result.videoPath);
+}
+```
+
+Requires: `OPENAI_API_KEY`, `PEXELS_API_KEY`
+Peer deps: `fluent-ffmpeg`, `@ffmpeg-installer/ffmpeg`, `pexels`
+
+> **Full guide:** [Video](./video.md)
 
