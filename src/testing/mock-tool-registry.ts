@@ -22,6 +22,7 @@
  */
 
 import type { Tool, ToolResult, ToolContext } from '../tools/types.js';
+import { ToolCategory } from '../tools/types.js';
 import { z } from 'zod';
 
 export interface ToolCallRecord {
@@ -78,18 +79,28 @@ export class MockToolRegistry {
     toTools(): Tool[] {
         const records = this._calls;
         return Array.from(this.handlers.entries()).map(([name, handler]) => {
+            const params = z.object({}).passthrough();
             return {
+                id: `mock-tool-${name}`,
                 name,
                 description: `Mock tool: ${name}`,
-                parameters: z.object({}).passthrough(),
-                async execute(params: Record<string, unknown>, _ctx: ToolContext): Promise<ToolResult> {
+                parameters: params,
+                permissions: {
+                    allowNetwork: false,
+                    allowFileSystem: false,
+                    maxExecutionTimeMs: 5000,
+                },
+                category: ToolCategory.CUSTOM,
+                version: '1.0.0',
+                validate: (raw): raw is z.infer<typeof params> => params.safeParse(raw).success,
+                async execute(p: Record<string, unknown>, _ctx: ToolContext): Promise<ToolResult> {
                     const start = new Date();
                     let result: unknown;
                     try {
-                        result = await handler(params);
+                        result = await handler(p);
                     } catch (err) {
                         const end = new Date();
-                        records.push({ name, args: params, result: null, calledAt: start });
+                        records.push({ name, args: p, result: null, calledAt: start });
                         return {
                             success: false,
                             error: {
@@ -97,16 +108,16 @@ export class MockToolRegistry {
                                 message: err instanceof Error ? err.message : String(err),
                             },
                             executionTimeMs: end.getTime() - start.getTime(),
-                            metadata: { startTime: start, endTime: end },
+                            metadata: { startTime: start, endTime: end, retries: 0 },
                         };
                     }
                     const end = new Date();
-                    records.push({ name, args: params, result, calledAt: start });
+                    records.push({ name, args: p, result, calledAt: start });
                     return {
                         success: true,
                         data: result,
                         executionTimeMs: end.getTime() - start.getTime(),
-                        metadata: { startTime: start, endTime: end },
+                        metadata: { startTime: start, endTime: end, retries: 0 },
                     };
                 },
             } satisfies Tool;
