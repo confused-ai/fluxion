@@ -1,0 +1,43 @@
+version: "3.9"
+
+services:
+  agent:
+    build: .
+    image: confused-ai-agent:latest
+    ports:
+      - "8787:8787"
+    environment:
+      - PORT=8787
+      - NODE_ENV=production
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - AGENT_DB_PATH=/data/agent.db
+      - REDIS_URL=redis://redis:6379
+      - ADMIN_TOKEN=${ADMIN_TOKEN:-changeme}
+    volumes:
+      - agent-data:/data
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8787/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  redis:
+    image: redis:7-alpine
+    command: redis-server --save 60 1 --loglevel warning
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  agent-data:
+  redis-data:

@@ -1,0 +1,150 @@
+---
+# Kubernetes manifests for confused-ai agent deployment
+# Apply: kubectl apply -f k8s.yaml
+# Replace all <placeholders> before applying.
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: agents
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: agent-secrets
+  namespace: agents
+type: Opaque
+stringData:
+  OPENAI_API_KEY: "<your-openai-api-key>"
+  ADMIN_TOKEN: "<your-admin-token>"
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: confused-ai-agent
+  namespace: agents
+  labels:
+    app: confused-ai-agent
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: confused-ai-agent
+  template:
+    metadata:
+      labels:
+        app: confused-ai-agent
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+        - name: agent
+          image: <your-registry>/confused-ai-agent:latest
+          ports:
+            - containerPort: 8787
+              name: http
+          env:
+            - name: PORT
+              value: "8787"
+            - name: NODE_ENV
+              value: production
+            - name: OPENAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: agent-secrets
+                  key: OPENAI_API_KEY
+            - name: ADMIN_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: agent-secrets
+                  key: ADMIN_TOKEN
+            - name: AGENT_DB_PATH
+              value: /data/agent.db
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8787
+            initialDelaySeconds: 15
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8787
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 3
+          volumeMounts:
+            - name: agent-data
+              mountPath: /data
+      volumes:
+        - name: agent-data
+          persistentVolumeClaim:
+            claimName: agent-data-pvc
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: confused-ai-agent
+  namespace: agents
+spec:
+  selector:
+    app: confused-ai-agent
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8787
+  type: ClusterIP
+
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: confused-ai-agent-hpa
+  namespace: agents
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: confused-ai-agent
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: agent-data-pvc
+  namespace: agents
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi

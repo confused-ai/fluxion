@@ -1,0 +1,31 @@
+# render.yaml — Render.com deployment configuration for confused-ai agents
+# https://render.com/docs/render-yaml-spec
+#
+# Commit this file to your repo and connect via the Render dashboard.
+
+services:
+  - type: web
+    name: confused-ai-agent
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: "8787"
+      - key: NODE_ENV
+        value: production
+      - key: OPENAI_API_KEY
+        sync: false          # Set this secret in the Render dashboard
+      - key: ADMIN_TOKEN
+        sync: false          # Set this secret in the Render dashboard
+      - key: AGENT_DB_PATH
+        value: /data/agent.db
+    disk:
+      name: agent-data
+      mountPath: /data
+      sizeGB: 1
+    scaling:
+      minInstances: 1
+      maxInstances: 3
+      targetMemoryPercent: 80
+      targetCPUPercent: 70

@@ -1,0 +1,55 @@
+# fly.toml — Fly.io deployment configuration for confused-ai agents
+# https://fly.io/docs/reference/configuration/
+#
+# Deploy: fly launch --no-deploy && fly deploy
+
+app = "<your-app-name>"
+primary_region = "iad"   # Change to your nearest region
+kill_signal = "SIGTERM"
+kill_timeout = 30
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  PORT = "8787"
+  NODE_ENV = "production"
+  # AGENT_DB_PATH = "/data/agent.db"  # Enable with [mounts] below
+
+[http_service]
+  internal_port = 8787
+  force_https = true
+  auto_stop_machines = true
+  auto_start_machines = true
+  min_machines_running = 1
+  processes = ["app"]
+
+  [http_service.concurrency]
+    type = "requests"
+    hard_limit = 200
+    soft_limit = 150
+
+[[vm]]
+  memory = "512mb"
+  cpu_kind = "shared"
+  cpus = 1
+
+[checks]
+  [checks.health]
+    grace_period = "10s"
+    interval = "30s"
+    method = "get"
+    path = "/health"
+    port = 8787
+    timeout = "5s"
+    type = "http"
+
+# Uncomment for persistent SQLite storage:
+# [[mounts]]
+#   source = "agent_data"
+#   destination = "/data"
+#   initial_size = "1gb"
+
+# Secrets (set via CLI, never in this file):
+# fly secrets set OPENAI_API_KEY=sk-...
+# fly secrets set ADMIN_TOKEN=...

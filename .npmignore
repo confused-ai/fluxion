@@ -1,0 +1,16 @@
+# Defense-in-depth alongside package.json "files" (whitelist: only dist/*.js, *.cjs, *.d.ts).
+# npm never ships TypeScript sources from src/ when "files" is set — these patterns catch mistakes
+# if someone later adds a broad glob like "**/*" to "files".
+
+src/
+tests/
+examples/
+coverage/
+.turbo/
+.vscode/
+**/*.test.ts
+**/*.spec.ts
+tsconfig.json
+tsup.config.ts
+vitest.config.*
+.env*

@@ -1,0 +1,422 @@
+{
+  "version": "1.0.0",
+  "lastScanned": 1776854961712,
+  "projectRoot": "/Users/rvuyyuru/Desktop/ag-code/agent-framework",
+  "techStack": {
+    "languages": [
+      {
+        "name": "JavaScript/TypeScript",
+        "version": ">=18.0.0",
+        "confidence": "high",
+        "markers": [
+          "package.json"
+        ]
+      },
+      {
+        "name": "TypeScript",
+        "version": null,
+        "confidence": "high",
+        "markers": [
+          "tsconfig.json"
+        ]
+      }
+    ],
+    "frameworks": [
+      {
+        "name": "vitest",
+        "version": "4.0.18",
+        "category": "testing"
+      }
+    ],
+    "packageManager": "npm",
+    "runtime": "Node.js 18.0.0"
+  },
+  "build": {
+    "buildCommand": "npm run build",
+    "testCommand": "npm test",
+    "lintCommand": null,
+    "devCommand": "npm run dev",
+    "scripts": {
+      "build": "tsup",
+      "dev": "tsup --watch",
+      "typecheck": "tsc --noEmit",
+      "test": "vitest run",
+      "test:watch": "vitest",
+      "test:coverage": "vitest run --coverage"
+    }
+  },
+  "conventions": {
+    "namingStyle": "camelCase/PascalCase",
+    "importStyle": null,
+    "testPattern": "*.test.ts",
+    "fileOrganization": null
+  },
+  "structure": {
+    "isMonorepo": false,
+    "workspaces": [],
+    "mainDirectories": [
+      "src",
+      "tests"
+    ],
+    "gitBranches": {
+      "defaultBranch": "main",
+      "branchingStrategy": null
+    }
+  },
+  "customNotes": [],
+  "directoryMap": {
+    "dist": {
+      "path": "dist",
+      "purpose": "Distribution/build output",
+      "fileCount": 126,
+      "lastAccessed": 1776854961706,
+      "keyFiles": [
+        "agentic.cjs",
+        "agentic.cjs.map",
+        "agentic.d.cts",
+        "agentic.d.ts",
+        "agentic.js"
+      ]
+    },
+    "src": {
+      "path": "src",
+      "purpose": "Source code",
+      "fileCount": 7,
+      "lastAccessed": 1776854961708,
+      "keyFiles": [
+        "agent.ts",
+        "create-agent.ts",
+        "debug-logger.ts",
+        "errors.ts",
+        "index.ts"
+      ]
+    },
+    "tests": {
+      "path": "tests",
+      "purpose": "Test files",
+      "fileCount": 5,
+      "lastAccessed": 1776854961709,
+      "keyFiles": [
+        "artifact.test.ts",
+        "circuit-breaker.test.ts",
+        "health.test.ts",
+        "llm-cache.test.ts",
+        "rate-limiter.test.ts"
+      ]
+    },
+    "src/config": {
+      "path": "src/config",
+      "purpose": "Configuration files",
+      "fileCount": 4,
+      "lastAccessed": 1776854961709,
+      "keyFiles": [
+        "index.ts",
+        "loader.ts",
+        "types.ts"
+      ]
+    }
+  },
+  "hotPaths": [
+    {
+      "path": "src/llm/anthropic-provider.ts",
+      "accessCount": 6,
+      "lastAccessed": 1776856650024,
+      "type": "file"
+    },
+    {
+      "path": "src/tools/index.ts",
+      "accessCount": 5,
+      "lastAccessed": 1776857404308,
+      "type": "file"
+    },
+    {
+      "path": "src/tools/search/todoist-tool.ts",
+      "accessCount": 4,
+      "lastAccessed": 1776857377576,
+      "type": "file"
+    },
+    {
+      "path": "src/llm/index.ts",
+      "accessCount": 3,
+      "lastAccessed": 1776856310160,
+      "type": "file"
+    },
+    {
+      "path": "src/create-agent/resolve-llm.ts",
+      "accessCount": 3,
+      "lastAccessed": 1776856651406,
+      "type": "file"
+    },
+    {
+      "path": "src/tools/database-tool.ts",
+      "accessCount": 3,
+      "lastAccessed": 1776856946692,
+      "type": "file"
+    },
+    {
+      "path": "src/tools/stripe-tool.ts",
+      "accessCount": 3,
+      "lastAccessed": 1776856948128,
+      "type": "file"
+    },
+    {
+      "path": "src/index.ts",
+      "accessCount": 2,
+      "lastAccessed": 1776855753303,
+      "type": "file"
+    },
+    {
+      "path": "src/llm/types.ts",
+      "accessCount": 2,
+      "lastAccessed": 1776855758620,
+      "type": "file"
+    },
+    {
+      "path": "src/llm/openai-provider.ts",
+      "accessCount": 2,
+      "lastAccessed": 1776855759020,
+      "type": "file"
+    },
+    {
+      "path": "src/llm/openrouter-provider.ts",
+      "accessCount": 2,
+      "lastAccessed": 1776855764530,
+      "type": "file"
+    },
+    {
+      "path": "src/create-agent.ts",
+      "accessCount": 2,
+      "lastAccessed": 1776855765141,
+      "type": "file"
+    },
+    {
+      "path": "src/create-agent/index.ts",
+      "accessCount": 2,
+      "lastAccessed": 1776855780090,
+      "type": "file"
+    },
+    {
+      "path": "src/create-agent/factory.ts",
+      "accessCount": 2,
+      "lastAccessed": 1776855793269,
+      "type": "file"
+    },
+    {
+      "path": "package.json",
+      "accessCount": 2,
+      "lastAccessed": 1776855793321,
+      "type": "file"
+    },
+    {
+      "path": "src/llm/model-resolver.ts",
+      "accessCount": 2,
+      "lastAccessed": 1776856239789,
+      "type": "file"
+    },
+    {
+      "path": "src/llm/cost-tracker.ts",
+      "accessCount": 2,
+      "lastAccessed": 1776856285200,
+      "type": "file"
+    },
+    {
+      "path": "src/tools/types.ts",
+      "accessCount": 2,
+      "lastAccessed": 1776856606043,
+      "type": "file"
+    },
+    {
+      "path": "src/tools/email-tool.ts",
+      "accessCount": 2,
+      "lastAccessed": 1776856710869,
+      "type": "file"
+    },
+    {
+      "path": "src/tools/redis-tool.ts",
+      "accessCount": 2,
+      "lastAccessed": 1776856728972,
+      "type": "file"
+    },
+    {
+      "path": "src/tools/discord-tool.ts",
+      "accessCount": 2,
+      "lastAccessed": 1776856772059,
+      "type": "file"
+    },
+    {
+      "path": "src/tools/linear-tool.ts",
+      "accessCount": 2,
+      "lastAccessed": 1776856796187,
+      "type": "file"
+    },
+    {
+      "path": "src/tools/code-exec-tool.ts",
+      "accessCount": 2,
+      "lastAccessed": 1776856817467,
+      "type": "file"
+    },
+    {
+      "path": "src/tools/csv-tool.ts",
+      "accessCount": 2,
+      "lastAccessed": 1776856845404,
+      "type": "file"
+    },
+    {
+      "path": "tsconfig.json",
+      "accessCount": 1,
+      "lastAccessed": 1776855661922,
+      "type": "file"
+    },
+    {
+      "path": "README.md",
+      "accessCount": 1,
+      "lastAccessed": 1776855661978,
+      "type": "file"
+    },
+    {
+      "path": "src/core/types.ts",
+      "accessCount": 1,
+      "lastAccessed": 1776855664554,
+      "type": "file"
+    },
+    {
+      "path": "src/memory/types.ts",
+      "accessCount": 1,
+      "lastAccessed": 1776855665155,
+      "type": "file"
+    },
+    {
+      "path": "src/orchestration/types.ts",
+      "accessCount": 1,
+      "lastAccessed": 1776855669238,
+      "type": "file"
+    },
+    {
+      "path": "src/session/types.ts",
+      "accessCount": 1,
+      "lastAccessed": 1776855669320,
+      "type": "file"
+    },
+    {
+      "path": "src/orchestration/swarm.ts",
+      "accessCount": 1,
+      "lastAccessed": 1776855672372,
+      "type": "file"
+    },
+    {
+      "path": "tests/artifact.test.ts",
+      "accessCount": 1,
+      "lastAccessed": 1776855672740,
+      "type": "file"
+    },
+    {
+      "path": "tsup.config.ts",
+      "accessCount": 1,
+      "lastAccessed": 1776855675910,
+      "type": "file"
+    },
+    {
+      "path": "vitest.config.ts",
+      "accessCount": 1,
+      "lastAccessed": 1776855675943,
+      "type": "file"
+    },
+    {
+      "path": "src/production/index.ts",
+      "accessCount": 1,
+      "lastAccessed": 1776855682850,
+      "type": "file"
+    },
+    {
+      "path": "src/agentic/types.ts",
+      "accessCount": 1,
+      "lastAccessed": 1776855683284,
+      "type": "file"
+    },
+    {
+      "path": "src/runtime/server.ts",
+      "accessCount": 1,
+      "lastAccessed": 1776855683465,
+      "type": "file"
+    },
+    {
+      "path": "src/orchestration/index.ts",
+      "accessCount": 1,
+      "lastAccessed": 1776855686571,
+      "type": "file"
+    },
+    {
+      "path": "src/guardrails/index.ts",
+      "accessCount": 1,
+      "lastAccessed": 1776855697124,
+      "type": "file"
+    },
+    {
+      "path": "src/knowledge/index.ts",
+      "accessCount": 1,
+      "lastAccessed": 1776855697296,
+      "type": "file"
+    },
+    {
+      "path": "src/llm/google-provider.ts",
+      "accessCount": 1,
+      "lastAccessed": 1776856173655,
+      "type": "file"
+    },
+    {
+      "path": "src/llm/compat-providers.ts",
+      "accessCount": 1,
+      "lastAccessed": 1776856210740,
+      "type": "file"
+    },
+    {
+      "path": "src/tools/base-tool.ts",
+      "accessCount": 1,
+      "lastAccessed": 1776856605730,
+      "type": "file"
+    },
+    {
+      "path": "src/tools/search/tavily-tool.ts",
+      "accessCount": 1,
+      "lastAccessed": 1776857158001,
+      "type": "file"
+    },
+    {
+      "path": "src/tools/search/arxiv-tool.ts",
+      "accessCount": 1,
+      "lastAccessed": 1776857175025,
+      "type": "file"
+    },
+    {
+      "path": "src/tools/search/weather-tool.ts",
+      "accessCount": 1,
+      "lastAccessed": 1776857189416,
+      "type": "file"
+    },
+    {
+      "path": "src/tools/search/youtube-tool.ts",
+      "accessCount": 1,
+      "lastAccessed": 1776857205286,
+      "type": "file"
+    },
+    {
+      "path": "src/tools/search/reddit-tool.ts",
+      "accessCount": 1,
+      "lastAccessed": 1776857221790,
+      "type": "file"
+    },
+    {
+      "path": "src/tools/search/twilio-tool.ts",
+      "accessCount": 1,
+      "lastAccessed": 1776857234153,
+      "type": "file"
+    },
+    {
+      "path": "src/tools/search/exa-tool.ts",
+      "accessCount": 1,
+      "lastAccessed": 1776857436899,
+      "type": "file"
+    }
+  ],
+  "userDirectives": []
+}

@@ -1,0 +1,4 @@
+# Local agent state (sessions DB + resume pointer)
+*.db
+persona-agent-meta.json
+user-longterm.md

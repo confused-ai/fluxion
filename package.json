@@ -1,0 +1,242 @@
+{
+    "name": "confused-ai",
+    "version": "0.6.0",
+    "description": "TypeScript framework for building production-grade AI agents, teams, and services",
+    "type": "module",
+    "files": [
+        "dist/**/*.js",
+        "dist/**/*.cjs",
+        "dist/**/*.d.ts",
+        "dist/**/*.d.cts",
+        "!dist/**/*.map"
+    ],
+    "main": "./dist/index.cjs",
+    "module": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js",
+            "require": "./dist/index.cjs"
+        },
+        "./core": {
+            "types": "./dist/core.d.ts",
+            "import": "./dist/core.js",
+            "require": "./dist/core.cjs"
+        },
+        "./memory": {
+            "types": "./dist/memory.d.ts",
+            "import": "./dist/memory.js",
+            "require": "./dist/memory.cjs"
+        },
+        "./tools": {
+            "types": "./dist/tools.d.ts",
+            "import": "./dist/tools.js",
+            "require": "./dist/tools.cjs"
+        },
+        "./planner": {
+            "types": "./dist/planner.d.ts",
+            "import": "./dist/planner.js",
+            "require": "./dist/planner.cjs"
+        },
+        "./execution": {
+            "types": "./dist/execution.d.ts",
+            "import": "./dist/execution.js",
+            "require": "./dist/execution.cjs"
+        },
+        "./orchestration": {
+            "types": "./dist/orchestration.d.ts",
+            "import": "./dist/orchestration.js",
+            "require": "./dist/orchestration.cjs"
+        },
+        "./observability": {
+            "types": "./dist/observability.d.ts",
+            "import": "./dist/observability.js",
+            "require": "./dist/observability.cjs"
+        },
+        "./llm": {
+            "types": "./dist/llm.d.ts",
+            "import": "./dist/llm.js",
+            "require": "./dist/llm.cjs"
+        },
+        "./agentic": {
+            "types": "./dist/agentic.d.ts",
+            "import": "./dist/agentic.js",
+            "require": "./dist/agentic.cjs"
+        },
+        "./session": {
+            "types": "./dist/session.d.ts",
+            "import": "./dist/session.js",
+            "require": "./dist/session.cjs"
+        },
+        "./guardrails": {
+            "types": "./dist/guardrails.d.ts",
+            "import": "./dist/guardrails.js",
+            "require": "./dist/guardrails.cjs"
+        },
+        "./production": {
+            "types": "./dist/production.d.ts",
+            "import": "./dist/production.js",
+            "require": "./dist/production.cjs"
+        },
+        "./artifacts": {
+            "types": "./dist/artifacts.d.ts",
+            "import": "./dist/artifacts.js",
+            "require": "./dist/artifacts.cjs"
+        },
+        "./voice": {
+            "types": "./dist/voice.d.ts",
+            "import": "./dist/voice.js",
+            "require": "./dist/voice.cjs"
+        },
+        "./tools/shell": {
+            "types": "./dist/tools/shell.d.ts",
+            "import": "./dist/tools/shell.js",
+            "require": "./dist/tools/shell.cjs"
+        },
+        "./runtime": {
+            "types": "./dist/runtime.d.ts",
+            "import": "./dist/runtime.js",
+            "require": "./dist/runtime.cjs"
+        },
+        "./create-agent": {
+            "types": "./dist/create-agent.d.ts",
+            "import": "./dist/create-agent.js",
+            "require": "./dist/create-agent.cjs"
+        },
+        "./contracts": {
+            "types": "./dist/contracts.d.ts",
+            "import": "./dist/contracts.js",
+            "require": "./dist/contracts.cjs"
+        },
+        "./plugins": {
+            "types": "./dist/plugins.d.ts",
+            "import": "./dist/plugins.js",
+            "require": "./dist/plugins.cjs"
+        },
+        "./knowledge": {
+            "types": "./dist/knowledge.d.ts",
+            "import": "./dist/knowledge.js",
+            "require": "./dist/knowledge.cjs"
+        },
+        "./storage": {
+            "types": "./dist/storage.d.ts",
+            "import": "./dist/storage.js",
+            "require": "./dist/storage.cjs"
+        },
+        "./adapters": {
+            "types": "./dist/adapters.d.ts",
+            "import": "./dist/adapters.js",
+            "require": "./dist/adapters.cjs"
+        },
+        "./background": {
+            "types": "./dist/background.d.ts",
+            "import": "./dist/background.js",
+            "require": "./dist/background.cjs"
+        },
+        "./testing": {
+            "types": "./dist/testing.d.ts",
+            "import": "./dist/testing.js",
+            "require": "./dist/testing.cjs"
+        },
+        "./learning": {
+            "types": "./dist/learning.d.ts",
+            "import": "./dist/learning.js",
+            "require": "./dist/learning.cjs"
+        },
+        "./video": {
+            "types": "./dist/video.d.ts",
+            "import": "./dist/video.js",
+            "require": "./dist/video.cjs"
+        },
+        "./config": {
+            "types": "./dist/config.d.ts",
+            "import": "./dist/config.js",
+            "require": "./dist/config.cjs"
+        }
+    },
+
+    "scripts": {
+        "example:simple": "bun examples/simple-agent.ts",
+        "example:showcase": "bun examples/framework-showcase.ts",
+        "example:potential": "bun examples/unlock-framework-potential.ts",
+        "example:persona": "bun examples/persona-builder.ts",
+        "example:meridian": "bun examples/meridian-platform.ts",
+        "build": "tsup",
+        "dev": "tsup --watch",
+        "typecheck": "tsc --noEmit",
+        "test": "vitest run",
+        "test:watch": "vitest",
+        "test:coverage": "vitest run --coverage",
+        "docs:dev": "vitepress dev docs",
+        "docs:build": "vitepress build docs",
+        "docs:preview": "vitepress preview docs",
+        "prepack": "npm run typecheck && npm run test && npm run build",
+        "pack:inspect": "npm pack --dry-run"
+    },
+    "keywords": [
+        "agent",
+        "ai",
+        "framework",
+        "typescript",
+        "multi-agent",
+        "orchestration",
+        "llm",
+        "mcp",
+        "workflow",
+        "rag"
+    ],
+    "author": "",
+    "license": "MIT",
+    "devDependencies": {
+        "@aws-sdk/client-bedrock-runtime": "^3.1036.0",
+        "@types/bun": "latest",
+        "@types/uuid": "^9.0.8",
+        "@vitest/coverage-v8": "^4.0.18",
+        "better-sqlite3": "^11.0.0",
+        "playwright": "^1.59.1",
+        "tsup": "^8.4.0",
+        "typescript": "^5.9.3",
+        "vitepress": "^1.6.4",
+        "vitest": "^4.0.18"
+    },
+    "dependencies": {
+        "@ffmpeg-installer/ffmpeg": "^1.1.0",
+        "@types/fluent-ffmpeg": "^2.1.28",
+        "commander": "^14.0.3",
+        "dotenv": "^17.3.1",
+        "duck-duck-scrape": "^2.2.5",
+        "fluent-ffmpeg": "^2.1.3",
+        "openai": "^6.17.0",
+        "pexels": "^1.4.0",
+        "uuid": "^13.0.0",
+        "yahoo-finance2": "^2.11.3",
+        "zod": "^4.3.6"
+    },
+    "peerDependencies": {
+        "@aws-sdk/client-bedrock-runtime": "^3.0.0",
+        "better-sqlite3": "^11.0.0",
+        "openai": "^6.17.0",
+        "playwright": "^1.0.0"
+    },
+    "peerDependenciesMeta": {
+        "openai": {
+            "optional": true
+        },
+        "better-sqlite3": {
+            "optional": true
+        },
+        "@aws-sdk/client-bedrock-runtime": {
+            "optional": true
+        },
+        "playwright": {
+            "optional": true
+        }
+    },
+    "engines": {
+        "node": ">=18.0.0"
+    },
+    "bin": {
+        "confused-ai": "./dist/cli.js"
+    }
+}

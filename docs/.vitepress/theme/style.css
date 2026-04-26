@@ -1,0 +1,213 @@
+/* =========================================================
+   confused-ai — custom VitePress theme
+   ========================================================= */
+
+/* ── Brand colours ──────────────────────────────────────── */
+:root {
+  --vp-c-brand-1: #8b5cf6;
+  --vp-c-brand-2: #7c3aed;
+  --vp-c-brand-3: #6d28d9;
+  --vp-c-brand-soft: rgba(139, 92, 246, 0.12);
+  --ca-gradient: linear-gradient(135deg, #a855f7 0%, #22d3ee 100%);
+}
+
+.dark {
+  --vp-c-brand-1: #a78bfa;
+  --vp-c-brand-2: #8b5cf6;
+  --vp-c-brand-3: #7c3aed;
+  --vp-c-brand-soft: rgba(167, 139, 250, 0.16);
+  --ca-gradient: linear-gradient(135deg, #c084fc 0%, #67e8f9 100%);
+}
+
+/* ── Hero — gradient text & radial glow ─────────────────── */
+:root {
+  --vp-home-hero-name-color: transparent;
+  --vp-home-hero-name-background: linear-gradient(135deg, #a855f7 20%, #22d3ee 80%);
+  --vp-home-hero-image-background-image: radial-gradient(
+    ellipse 80% 80% at 50% 50%,
+    rgba(168, 85, 247, 0.4),
+    rgba(34, 211, 238, 0.25),
+    transparent 65%
+  );
+  --vp-home-hero-image-filter: blur(72px);
+}
+
+.dark {
+  --vp-home-hero-name-background: linear-gradient(135deg, #c084fc 20%, #67e8f9 80%);
+  --vp-home-hero-image-background-image: radial-gradient(
+    ellipse 80% 80% at 50% 50%,
+    rgba(192, 132, 252, 0.35),
+    rgba(103, 232, 249, 0.2),
+    transparent 65%
+  );
+}
+
+/* ── Hero action buttons ─────────────────────────────────── */
+.VPButton.medium.brand {
+  background: var(--ca-gradient) !important;
+  border-color: transparent !important;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  transition: opacity 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.VPButton.medium.brand:hover {
+  opacity: 0.88;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 24px rgba(139, 92, 246, 0.4);
+}
+
+/* ── Feature cards ───────────────────────────────────────── */
+.VPFeatures .VPFeature {
+  border-radius: 12px !important;
+  border: 1px solid var(--vp-c-divider) !important;
+  background: var(--vp-c-bg-soft) !important;
+  transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
+}
+
+.dark .VPFeatures .VPFeature {
+  background: rgba(255, 255, 255, 0.028) !important;
+}
+
+.VPFeatures .VPFeature:hover {
+  transform: translateY(-4px);
+  border-color: var(--vp-c-brand-1) !important;
+  box-shadow: 0 8px 32px rgba(139, 92, 246, 0.18), 0 0 0 1px rgba(139, 92, 246, 0.08);
+}
+
+.VPFeatures .VPFeature .icon {
+  font-size: 2rem;
+  line-height: 1;
+}
+
+/* ── Navigation — backdrop blur ─────────────────────────── */
+.VPNav {
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+}
+
+/* ── Code blocks ─────────────────────────────────────────── */
+.vp-doc div[class*='language-'] {
+  border-radius: 10px;
+  border: 1px solid var(--vp-c-divider);
+  transition: border-color 0.2s ease;
+}
+
+.vp-doc div[class*='language-']:hover {
+  border-color: var(--vp-c-brand-soft);
+}
+
+/* ── Sidebar active indicator ───────────────────────────── */
+.VPSidebarItem.is-active > .item > .indicator {
+  background-color: var(--vp-c-brand-1) !important;
+}
+
+/* ── Custom callout blocks ───────────────────────────────── */
+.vp-doc .tip,
+.vp-doc .warning,
+.vp-doc .danger,
+.vp-doc .info {
+  border-radius: 8px;
+}
+
+/* ── Homepage content below features ────────────────────── */
+.VPHomeContent {
+  padding-bottom: 64px;
+}
+
+.VPHomeContent .container {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* Section heading spacing in home content */
+.VPHomeContent .vp-doc h2 {
+  font-size: 1.8rem;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  padding-top: 48px;
+  border-top: none;
+  background: var(--ca-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.VPHomeContent .vp-doc h3 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+/* ── Code-group tabs (better contrast) ──────────────────── */
+.vp-doc .vp-code-group .tabs {
+  border-radius: 8px 8px 0 0;
+}
+
+.vp-doc .vp-code-group .tabs label {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+/* ── Inline code ─────────────────────────────────────────── */
+.vp-doc :not(pre) > code {
+  border-radius: 4px;
+  font-size: 0.875em;
+  padding: 2px 6px;
+  background-color: var(--vp-c-brand-soft);
+  color: var(--vp-c-brand-1);
+}
+
+.dark .vp-doc :not(pre) > code {
+  background-color: rgba(167, 139, 250, 0.12);
+  color: #c4b5fd;
+}
+
+/* ── Table ───────────────────────────────────────────────── */
+.vp-doc table {
+  border-radius: 8px;
+  overflow: hidden;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.vp-doc thead tr th {
+  background: var(--vp-c-brand-soft);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.vp-doc tbody tr:hover {
+  background: var(--vp-c-bg-soft);
+}
+
+/* ── Blockquote / tip styling ────────────────────────────── */
+.vp-doc blockquote {
+  border-left: 4px solid var(--vp-c-brand-1);
+  border-radius: 0 8px 8px 0;
+  background: var(--vp-c-brand-soft);
+  color: var(--vp-c-text-1);
+  font-style: normal;
+  margin: 16px 0;
+}
+
+/* ── Anchor headings ─────────────────────────────────────── */
+.vp-doc h2 .header-anchor,
+.vp-doc h3 .header-anchor {
+  color: var(--vp-c-brand-1);
+}
+
+/* ── "Return type" / result badges ──────────────────────── */
+.vp-doc strong {
+  color: var(--vp-c-text-1);
+}
+
+/* ── Focus outline accessibility ────────────────────────── */
+a:focus-visible,
+button:focus-visible {
+  outline: 2px solid var(--vp-c-brand-1);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
