@@ -7,39 +7,6 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
-## [0.7.0] — 2026-04-27
-
-### Added
-
-#### Budget Enforcement
-- `budget?: BudgetConfig` added to `CreateAgentOptions` — configure `maxUsdPerRun`, `maxUsdPerUser`, `maxUsdPerMonth`, and `onExceeded` behaviour (`'throw' | 'warn' | 'truncate'`)
-- `BudgetEnforcer` instantiated in factory.ts; `budgetEnforcer?.resetRun()` called before each run
-- `addStepCost()` called in `runner.ts` after each LLM call when `result.usage` is present
-- `recordAndCheck(userId)` called in runner.ts after the run loop to enforce per-user daily + monthly caps
-- `userId?: string` added to `AgenticRunConfig` for per-user cap enforcement
-- `BudgetExceededError` thrown when a cap is crossed and `onExceeded === 'throw'`
-
-#### HITL Approval HTTP Endpoints
-- `approvalStore?: ApprovalStore` added to `CreateHttpServiceOptions`
-- `GET /v1/approvals` — lists all pending approval requests
-- `POST /v1/approvals/:id` — submits a decision `{ approved: boolean, comment?: string, decidedBy: string }`
-- Both routes wired in `server.ts` and documented in the OpenAPI spec
-
-#### Distributed Trace Context
-- `extractTraceContext()` imported and called in `server.ts` from incoming request headers (`traceparent`, `tracestate`)
-- `traceId` from the incoming trace is propagated in JSON responses and SSE event streams
-
-#### Graph Engine Production Hardening
-- `DurableExecutor` class — wraps `DAGEngine` + `EventStore` for fully durable execution; `.run()` starts a new execution, `.resume(executionId)` replays all events and continues from the last incomplete node; detects graph version mismatch on resume
-- `computeWaves(graph: GraphDef): NodeId[][]` — topological level assignment returning groups of nodes that can execute in parallel, used internally by the scheduler and available for custom scheduling
-- `BackpressureController(maxConcurrency)` — semaphore for concurrency control; `.acquire()` waits for a free slot, `.release()` frees one, `.inflight` and `.queueDepth` expose current state
-- Graph testing utilities exported from `confused-ai/testing`: `createTestRunner(opts?)`, `createMockLLMProvider(name, responses)`, `expectEventSequence(actual, expected)` (subset match), `assertExactEventSequence(actual, expected)` (strict match)
-- 4 new CLI commands: `confused-ai replay --run-id <id>` (stream events), `confused-ai inspect --run-id <id>` (per-node summary), `confused-ai export --run-id <id> [--out file]` (dump to JSON), `confused-ai diff --run-id-a <id> --run-id-b <id>` (compare two runs; exits `1` if divergent)
-- Benchmark suite under `benchmarks/` with 4 files targeting: executor (<1ms), event-store (>5 k writes/sec), replay (>10 k events/sec), graph-compile (<5ms); run via `bun run bench`
-- ESLint layer-boundaries config (`eslint.config.js`) using `eslint-plugin-boundaries` to block illegal cross-layer imports
-
----
-
 ## [1.0.0] — 2026-05-18
 
 ### Added
@@ -117,6 +84,43 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ---
 
 ## [0.7.0] — 2026-04-27
+
+### Added
+
+#### Budget Enforcement
+- `budget?: BudgetConfig` added to `CreateAgentOptions` — configure `maxUsdPerRun`, `maxUsdPerUser`, `maxUsdPerMonth`, and `onExceeded` behaviour (`'throw' | 'warn' | 'truncate'`)
+- `BudgetEnforcer` instantiated in factory.ts; `budgetEnforcer?.resetRun()` called before each run
+- `addStepCost()` called in `runner.ts` after each LLM call when `result.usage` is present
+- `recordAndCheck(userId)` called in runner.ts after the run loop to enforce per-user daily + monthly caps
+- `userId?: string` added to `AgenticRunConfig` for per-user cap enforcement
+- `BudgetExceededError` thrown when a cap is crossed and `onExceeded === 'throw'`
+
+#### HITL Approval HTTP Endpoints
+- `approvalStore?: ApprovalStore` added to `CreateHttpServiceOptions`
+- `GET /v1/approvals` — lists all pending approval requests
+- `POST /v1/approvals/:id` — submits a decision `{ approved: boolean, comment?: string, decidedBy: string }`
+- Both routes wired in `server.ts` and documented in the OpenAPI spec
+
+#### Distributed Trace Context
+- `extractTraceContext()` imported and called in `server.ts` from incoming request headers (`traceparent`, `tracestate`)
+- `traceId` from the incoming trace is propagated in JSON responses and SSE event streams
+
+#### Graph Engine Production Hardening
+- `DurableExecutor` class — wraps `DAGEngine` + `EventStore` for fully durable execution; `.run()` starts a new execution, `.resume(executionId)` replays all events and continues from the last incomplete node; detects graph version mismatch on resume
+- `computeWaves(graph: GraphDef): NodeId[][]` — topological level assignment returning groups of nodes that can execute in parallel, used internally by the scheduler and available for custom scheduling
+- `BackpressureController(maxConcurrency)` — semaphore for concurrency control; `.acquire()` waits for a free slot, `.release()` frees one, `.inflight` and `.queueDepth` expose current state
+- Graph testing utilities exported from `confused-ai/testing`: `createTestRunner(opts?)`, `createMockLLMProvider(name, responses)`, `expectEventSequence(actual, expected)` (subset match), `assertExactEventSequence(actual, expected)` (strict match)
+- 4 new CLI commands: `confused-ai replay --run-id <id>` (stream events), `confused-ai inspect --run-id <id>` (per-node summary), `confused-ai export --run-id <id> [--out file]` (dump to JSON), `confused-ai diff --run-id-a <id> --run-id-b <id>` (compare two runs; exits `1` if divergent)
+- Benchmark suite under `benchmarks/` with 4 files targeting: executor (<1ms), event-store (>5 k writes/sec), replay (>10 k events/sec), graph-compile (<5ms); run via `bun run bench`
+- ESLint layer-boundaries config (`eslint.config.js`) using `eslint-plugin-boundaries` to block illegal cross-layer imports
+
+---
+
+## [0.6.0]
+
+### Added
+
+#### Testing Module (`confused-ai/testing`)
 - `MockToolRegistry` — records all tool invocations for assertion in tests; supports `calls()`, `lastCall()`, `reset()`, `register()`, `toTools()`
 - `createTestAgent()` — zero-config test harness that auto-wires `MockLLMProvider` + `MockSessionStore`
 - `createTestHttpService()` — integration test helper that starts a real HTTP server on a random port with `.request()`, `.close()`, `.port`, `.baseUrl`
