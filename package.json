@@ -253,6 +253,11 @@
             "types": "./dist/extensions.d.ts",
             "import": "./dist/extensions.js",
             "require": "./dist/extensions.cjs"
+        },
+        "./graph": {
+            "types": "./dist/graph.d.ts",
+            "import": "./dist/graph.js",
+            "require": "./dist/graph.cjs"
         }
     },
     "scripts": {
@@ -261,6 +266,8 @@
         "example:potential": "bun examples/unlock-framework-potential.ts",
         "example:persona": "bun examples/persona-builder.ts",
         "example:meridian": "bun examples/meridian-platform.ts",
+        "example:graph": "bun examples/graph-workflow.ts",
+        "example:multi-agent": "bun examples/multi-agent-orchestration.ts",
         "build": "tsup",
         "dev": "tsup --watch",
         "typecheck": "tsc --noEmit",
