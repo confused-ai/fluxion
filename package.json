@@ -1,6 +1,6 @@
 {
     "name": "confused-ai",
-    "version": "0.6.0",
+    "version": "0.7.1",
     "description": "TypeScript framework for building production-grade AI agents, teams, and services",
     "type": "module",
     "files": [
@@ -155,7 +155,6 @@
             "require": "./dist/config.cjs"
         }
     },
-
     "scripts": {
         "example:simple": "bun examples/simple-agent.ts",
         "example:showcase": "bun examples/framework-showcase.ts",
@@ -237,6 +236,6 @@
         "node": ">=18.0.0"
     },
     "bin": {
-        "confused-ai": "./dist/cli.js"
+        "confused-ai": "dist/cli.js"
     }
 }

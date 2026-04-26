@@ -211,3 +211,110 @@ button:focus-visible {
   outline-offset: 2px;
   border-radius: 4px;
 }
+
+/* ── Hero text size boost ────────────────────────────────── */
+@media (min-width: 640px) {
+  .VPHero .name {
+    font-size: 3.5rem !important;
+    line-height: 1.1 !important;
+  }
+  .VPHero .text {
+    font-size: 2rem !important;
+  }
+}
+
+/* ── Feature grid link text ──────────────────────────────── */
+.VPFeatures .VPFeature a.link {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--vp-c-brand-1);
+  text-decoration: none;
+  display: inline-block;
+  margin-top: 8px;
+}
+
+.VPFeatures .VPFeature a.link::after {
+  content: ' →';
+}
+
+/* ── Badge chips (use ::: info with .badge) ─────────────── */
+.vp-doc .badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background: var(--vp-c-brand-soft);
+  color: var(--vp-c-brand-1);
+  vertical-align: middle;
+  margin-left: 4px;
+}
+
+/* ── Enterprise section dividers ────────────────────────── */
+.vp-doc hr {
+  margin: 40px 0;
+  border-color: var(--vp-c-divider);
+  opacity: 0.6;
+}
+
+/* ── Last-updated date ───────────────────────────────────── */
+.VPDocFooter .edit-info {
+  opacity: 0.7;
+  font-size: 0.85rem;
+}
+
+/* ── Comparison table striping ───────────────────────────── */
+.comparison-table table tbody tr:nth-child(even) {
+  background: var(--vp-c-bg-soft);
+}
+
+/* ── Nav version badge ───────────────────────────────────── */
+.VPNavBarMenuGroup .title {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Search modal ────────────────────────────────────────── */
+.VPLocalSearchBox {
+  border-radius: 12px !important;
+}
+
+/* ── Scrollbar styling ───────────────────────────────────── */
+:root {
+  scrollbar-width: thin;
+  scrollbar-color: var(--vp-c-brand-soft) transparent;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--vp-c-brand-soft);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--vp-c-brand-2);
+}
+
+/* ── "New" tag on sidebar items ──────────────────────────── */
+.new-badge::after {
+  content: 'NEW';
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  background: var(--ca-gradient);
+  color: white;
+  padding: 1px 5px;
+  border-radius: 4px;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+

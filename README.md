@@ -1,397 +1,535 @@
+<div align="center">
+
+<img src="docs/public/logo.svg" alt="confused-ai" width="80" height="80" />
+
 # confused-ai
 
-TypeScript framework for building production AI agents: ReAct-style agents, typed SDK workflows, memory, knowledge, guardrails, orchestration, observability, and a Node HTTP runtime.
+**Production-Grade AI Agent Framework for TypeScript**
 
-**See [CAPABILITIES.md](./CAPABILITIES.md) for a full map of modules** (RAG, orchestration, production, artifacts, etc.) and **runnable** commands below.
+Build, orchestrate, and deploy AI agents with enterprise-level reliability — from hello world to SOC 2-ready production in a single package.
+
+[![npm version](https://img.shields.io/npm/v/confused-ai?color=8b5cf6&label=npm)](https://www.npmjs.com/package/confused-ai)
+[![npm downloads](https://img.shields.io/npm/dm/confused-ai?color=22d3ee)](https://www.npmjs.com/package/confused-ai)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](./LICENSE)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue.svg)](https://www.typescriptlang.org/)
+[![Node.js](https://img.shields.io/badge/node-%3E%3D18-brightgreen)](https://nodejs.org/)
+[![Tests](https://img.shields.io/badge/tests-99%20passing-success)](./tests/)
+[![Docs](https://img.shields.io/badge/docs-vitepress-8b5cf6)](https://your-org.github.io/agent-framework/)
+
+[**Documentation**](https://your-org.github.io/agent-framework/) · [**Getting Started**](https://your-org.github.io/agent-framework/guide/getting-started) · [**18 Examples**](https://your-org.github.io/agent-framework/examples/) · [**Changelog**](./CHANGELOG.md)
+
+</div>
+
+---
+
+## Why confused-ai?
+
+Most AI frameworks give you a prototype. confused-ai gives you a **production system**:
+
+| Capability | confused-ai | LangChain.js | Vercel AI SDK | Mastra |
+|---|:---:|:---:|:---:|:---:|
+| Zero-config start | ✅ | ⚠️ | ✅ | ⚠️ |
+| 50+ built-in tools | ✅ | ✅ | ❌ | ⚠️ |
+| Multi-agent orchestration | ✅ | ✅ | ❌ | ✅ |
+| Circuit breakers | ✅ | ❌ | ❌ | ❌ |
+| USD budget enforcement | ✅ | ❌ | ❌ | ❌ |
+| Human-in-the-Loop (HITL) | ✅ | ⚠️ | ❌ | ⚠️ |
+| MCP client + server | ✅ | ✅ | ✅ | ✅ |
+| OTLP distributed tracing | ✅ | ⚠️ | ❌ | ⚠️ |
+| Multi-tenancy | ✅ | ❌ | ❌ | ❌ |
+| Audit log (SOC 2 / HIPAA) | ✅ | ❌ | ❌ | ❌ |
+| Idempotency keys | ✅ | ❌ | ❌ | ❌ |
+| LLM router (by task type) | ✅ | ❌ | ❌ | ❌ |
+| Voice (TTS + STT) | ✅ | ⚠️ | ❌ | ❌ |
+
+---
 
 ## Install
 
 ```bash
 npm install confused-ai
+# bun add confused-ai
+# pnpm add confused-ai
 ```
 
-Peer / optional: install `openai` (or the SDK your LLM path uses) in your app. Some tools load optional dependencies at runtime (`@anthropic-ai/sdk`, `mysql2`, `stripe`, etc.); install only what you use.
+Requires Node.js ≥ 18. Set at least one provider key:
 
-## Quick start
+```bash
+OPENAI_API_KEY=sk-...           # OpenAI / Azure OpenAI
+ANTHROPIC_API_KEY=sk-ant-...    # Anthropic Claude
+GOOGLE_API_KEY=...              # Google Gemini
+OPENROUTER_API_KEY=sk-or-...    # OpenRouter (100+ models)
+```
+
+## Quick Start
 
 ```ts
-import { createAgent } from "confused-ai";
+import { agent } from 'confused-ai';
 
-const agent = createAgent({
-  name: "Assistant",
-  instructions: "You are a helpful assistant.",
-});
-
-const result = await agent.run("Hello!");
-console.log(result.text);
+const ai = agent('You are a helpful assistant.');
+const { text } = await ai.run('What is 2 + 2?');
+console.log(text); // "4"
 ```
 
-**Lean bundle (no full umbrella import):** `import { createAgent, resolveLlmForCreateAgent } from "confused-ai/create-agent"`.
-
-Set at least one of: `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GOOGLE_API_KEY` / `GEMINI_API_KEY`, or `OPENROUTER_API_KEY`, or pass `llm` / `model` / `apiKey` (see [LLM & environment](#llm--environment)).
+That's it. No YAML. No chains. No boilerplate.
 
 ---
 
-## Creating agents
+## Table of Contents
 
-Use this section to pick **how** you build an agent, then wire **model → tools → session → run** (and optionally HTTP).
-
-### Choose an entry point
-
-| Approach | Import | When to use it |
-|----------|--------|----------------|
-| **`createAgent`** | `confused-ai` or `confused-ai/create-agent` | **Default:** one function gives you LLM resolution, ReAct loop, tools, session store, guardrails, `run` / `createSession`. Best for most products. |
-| **DX `defineAgent()`** | `confused-ai` | **Fluent builder:** `.name().instructions().model().tools().withSession().build()` → same kind of runnable object as `createAgent`. |
-| **`defineTypedAgent`** | `confused-ai` | **Zod I/O + optional `handler`:** typed inputs/outputs, pluggable memory/planner; pair with `createWorkflow` or `asOrchestratorAgent`. |
-| **`createAgenticAgent`** | `confused-ai` / `agentic` | **Low-level loop** only: you pass `LLMProvider` + tools; no `createAgent` session wiring. |
-| **`Agent` (class)** | `confused-ai` | **Subclassing** / custom lifecycle when you need the base class pattern. |
-
-**Name collision:** on the main package, **`defineAgent`** is the **DX chain builder**. The Zod SDK factory is exported as **`defineTypedAgent`**.
-
-### A. `createAgent` (step by step)
-
-1. **Set credentials** — e.g. `OPENAI_API_KEY` in `.env`, or pass `model: "anthropic:claude-3-5-sonnet-20241022"`, or `llm: new OpenAIProvider({ ... })`.
-2. **Pick a name and system prompt** — `name` and `instructions` are required.
-3. **Add tools** — pass `tools: [new HttpClientTool(), new BrowserTool()]` or your own `BaseTool` instances, or `tools: []` for chat-only.
-4. **Sessions (optional)** — call `await agent.createSession(userId?)` to get a `sessionId`, then `await agent.run(prompt, { sessionId })` so history is stored in `sessionStore` (default: in-memory; use SQL/Redis-backed store in production).
-5. **Run** — `const { text, steps, finishReason } = await agent.run("...")`. Optional: `onChunk`, `onToolCall`, `onStep` for streaming and debugging.
-
-```ts
-import { createAgent } from "confused-ai";
-import { CalculatorAddTool } from "confused-ai/tools";
-
-const agent = createAgent({
-  name: "MathHelper",
-  instructions: "Use calculator_add for arithmetic (parameters a and b as numbers).",
-  tools: [new CalculatorAddTool()],
-  // sessionStore: myRedisOrSqlStore,  // optional
-  // guardrails: true,
-});
-
-const sid = await agent.createSession("user-123");
-const out = await agent.run("What is 40 + 2?", { sessionId: sid });
-console.log(out.text);
-```
-
-### B. DX fluent builder → `CreateAgentResult`
-
-Same capabilities as `createAgent`, but chainable:
-
-```ts
-import { defineAgent } from "confused-ai";
-import { CalculatorAddTool } from "confused-ai/tools";
-
-const agent = defineAgent()
-  .name("MathHelper")
-  .instructions("You are concise.")
-  .model("openai:gpt-4o-mini")
-  .tools([new CalculatorAddTool()])
-  .withSession() // in-memory; pass a store for production
-  .build();
-
-await agent.run("Hi");
-```
-
-### C. Typed agents + workflows (`defineTypedAgent`)
-
-For **Zod-validated** inputs/outputs and **multi-step graphs** without going straight to the orchestration module:
-
-```ts
-import { z } from "zod";
-import { createWorkflow, defineTypedAgent, type DefinedAgent } from "confused-ai";
-
-const step1 = defineTypedAgent({
-  name: "plan",
-  inputSchema: z.object({ goal: z.string() }),
-  outputSchema: z.object({ bullets: z.array(z.string()) }),
-  handler: async (i) => ({ bullets: [i.goal, "execute", "verify"] }),
-});
-
-const { results } = await createWorkflow()
-  .task("plan", step1 as DefinedAgent<unknown, unknown>)
-  .execute({ goal: "Ship v1" });
-```
-
-The `task` / `execute` input is merged into the workflow context; each `DefinedAgent` sees `config.input` from that object.
-
-### D. Low-level: `createAgenticAgent`
-
-Use when you already have a **custom** `LLMProvider` and **ToolRegistry** / `Tool[]` and want the ReAct runner **without** `createAgent`’s session CRUD:
-
-```ts
-import { createAgenticAgent, OpenAIProvider } from "confused-ai";
-import { CalculatorAddTool } from "confused-ai/tools";
-
-const inner = createAgenticAgent({
-  name: "LowLevel",
-  instructions: "Help the user.",
-  llm: new OpenAIProvider({ model: "gpt-4o-mini" }),
-  tools: [new CalculatorAddTool()],
-});
-await inner.run({ prompt: "Hello" });
-```
-
-### E. Class-based `Agent`
-
-Use when you implement custom **orchestration** or **core** `Agent` subclasses — see `confused-ai/core` and `src/agent.ts` patterns.
-
-### Serve the same agent over HTTP
-
-After you have a `CreateAgentResult` from `createAgent` (or your builder), register it with **`createHttpService`** — see [HTTP runtime](#http-runtime).
-
-### `createAgent` options (reference)
-
-| Option | Role |
-|--------|------|
-| `name`, `instructions` | Required. Agent identity and system behavior |
-| `llm` | Custom provider; otherwise resolved from `model` / env |
-| `model`, `apiKey`, `baseURL` | OpenAI-style or `provider:model` string |
-| `openRouter` | `{ apiKey, model? }` for OpenRouter |
-| `tools` | `Tool[]` or `ToolRegistry` (framework defaults include HTTP + browser if you omit `tools` in some setups—pass `tools: [...]` explicitly to control) |
-| `toolMiddleware` | Cross-tool middleware |
-| `sessionStore` | Defaults to in-memory; plug Redis/SQL for production |
-| `guardrails` | `true` (sensitive-data rule), `false`, or a `GuardrailEngine` |
-| `maxSteps`, `timeoutMs` | Agentic loop limits |
-| `retry` | Retry policy for LLM/tools |
-| `logger` | `Logger` (e.g. `ConsoleLogger`) |
-| `dev` | Dev logger + tool middleware when `true` |
-
-`run()` returns `AgenticRunResult` (`text`, `steps`, `finishReason`, `messages`, …).  
-Optional run hooks: `onChunk`, `onToolCall`, `onToolResult`, `onStep` (`AgentRunOptions`).
-
----
-
-## Table of contents
-
-- [Creating agents](#creating-agents)
-- [Subpath packages](#subpath-packages)
-- [LLM & environment](#llm--environment)
-- [Sessions & chat history](#sessions--chat-history)
-- [Tools](#tools)
+- [Install](#install)
+- [Quick Start](#quick-start)
+- [Creating Agents](#creating-agents)
+- [Tools (50+)](#tools-50)
+- [Multi-Agent Orchestration](#multi-agent-orchestration)
+- [LLM Router](#llm-router)
+- [RAG & Knowledge](#rag--knowledge)
+- [Sessions & Memory](#sessions--memory)
 - [Guardrails](#guardrails)
-- [Agentic core (`createAgenticAgent`)](#agentic-core-createagenticagent)
-- [SDK (`defineAgent`, workflows)](#sdk-defineagent-workflows)
-- [Core `Agent` & orchestration](#core-agent--orchestration)
-- [Memory & knowledge](#memory--knowledge)
-- [Observability](#observability)
-- [Production: health, rate limits, resilience](#production-health-rate-limits-resilience)
-- [HTTP runtime](#http-runtime)
+- [Production Hardening](#production-hardening)
+- [HTTP Runtime](#http-runtime)
+- [Observability & Tracing](#observability--tracing)
+- [MCP Client & Server](#mcp-client--server)
+- [Voice (TTS & STT)](#voice-tts--stt)
+- [Deployment](#deployment)
+- [Subpath Packages](#subpath-packages)
+- [LLM Providers](#llm-providers)
+- [Testing](#testing)
 - [CLI](#cli)
-- [Extensions, learning, config](#extensions-learning-config)
-- [Artifacts, voice, video](#artifacts-voice-video)
-- [MCP (HTTP) tools](#mcp-http-tools)
-- [Examples in this repo](#examples-in-this-repo)
-- [Telemetry](#telemetry)
+- [Contributing](#contributing)
 - [License](#license)
 
 ---
 
-## Subpath packages
+## Creating Agents
 
-The package is split so you can import only what you need. Main entry re-exports most modules; `package.json` → `exports` is authoritative.
+### Option A: `createAgent` (recommended)
 
-| Import path | Purpose |
-|-------------|--------|
-| `confused-ai` | Main barrel: `createAgent`, `Agent`, `createAgenticAgent`, tools, session, LLM, orchestration, etc. |
-| `confused-ai/create-agent` | `createAgent`, `resolveLlmForCreateAgent`, env helpers — smaller graph |
-| `confused-ai/llm` | Providers, model resolution, embeddings |
-| `confused-ai/agentic` | ReAct / agentic loop types and runner |
-| `confused-ai/tools` | `BaseTool`, registries, built-in toolkits |
-| `confused-ai/session` | `SessionStore`, in-memory, SQL, SQLite |
-| `confused-ai/memory` | `MemoryStore`, in-memory, vector store |
-| `confused-ai/knowledge` | RAG / retrieval engine types and loaders |
-| `confused-ai/guardrails` | Validators, rules, types |
-| `confused-ai/planner` | Planners, plans, task types |
-| `confused-ai/execution` | Execution engine, graphs |
-| `confused-ai/orchestration` | Pipelines, supervisor, swarm, team, MCP helpers |
-| `confused-ai/observability` | Loggers, tracer, metrics, eval, OTLP |
-| `confused-ai/production` | Health checks, rate limiter, circuit breaker, resumable streams, graceful shutdown |
-| `confused-ai/config` | Environment / config loading |
-| `confused-ai/testing` | Mock LLM, test fixtures |
-| `confused-ai/runtime` | `createHttpService`, `listenService`, `getRuntimeOpenApiJson` |
-| `confused-ai/artifacts` | Artifact storage and helpers |
-| `confused-ai/voice` | Voice-related helpers |
-| `confused-ai/extensions` | Extension points for DB, middleware |
-| `confused-ai/core` | Base `Agent`, context builder, types |
-| Main package | `createAgent`, `defineTypedAgent` (Zod SDK), `defineAgent` (DX chain builder), `createWorkflow`, `asOrchestratorAgent`, `learning`, etc. — see `src/index.ts` |
+```ts
+import { createAgent } from 'confused-ai';
+import { CalculatorAddTool, HttpClientTool } from 'confused-ai/tools';
+
+const agent = createAgent({
+  name:         'Assistant',
+  instructions: 'You are a helpful assistant.',
+  model:        'openai:gpt-4o-mini',
+  tools:        [new CalculatorAddTool(), new HttpClientTool()],
+});
+
+const { text, steps, finishReason } = await agent.run('What is 40 + 2?');
+```
+
+### Option B: DX fluent builder
+
+```ts
+import { defineAgent } from 'confused-ai';
+
+const agent = defineAgent()
+  .name('Assistant')
+  .instructions('You are concise and accurate.')
+  .model('openai:gpt-4o-mini')
+  .tools([new CalculatorAddTool()])
+  .withSession()
+  .build();
+```
+
+### Option C: Typed agents with Zod I/O
+
+```ts
+import { defineTypedAgent, createWorkflow } from 'confused-ai';
+import { z } from 'zod';
+
+const planner = defineTypedAgent({
+  name:         'plan',
+  inputSchema:  z.object({ goal: z.string() }),
+  outputSchema: z.object({ bullets: z.array(z.string()) }),
+  handler:      async (i) => ({ bullets: [i.goal, 'execute', 'verify'] }),
+});
+
+const { results } = await createWorkflow().task('plan', planner).execute({ goal: 'Ship v1' });
+```
+
+### `createAgent` options
+
+| Option | Description |
+|--------|-------------|
+| `name`, `instructions` | **Required.** Agent identity and system behavior |
+| `model` | `openai:gpt-4o`, `anthropic:claude-3-5-sonnet-20241022`, `google:gemini-1.5-pro`, … |
+| `llm` | Custom `LLMProvider` (overrides `model`) |
+| `tools` | `Tool[]` or `ToolRegistry` |
+| `sessionStore` | In-memory default; plug in SQLite/Redis/Postgres for production |
+| `guardrails` | `true` (sensitive-data rule), `false`, or a `GuardrailEngine` |
+| `budget` | `{ maxUsdPerRun?, maxUsdPerUser? }` — hard USD caps |
+| `ragEngine` | `RAGEngine` for automatic retrieval-augmented generation |
+| `maxSteps`, `timeoutMs` | Loop limits |
+| `retry` | Retry policy for LLM / tool calls |
+| `logger` | `ConsoleLogger` or custom |
+| `dev` | `true` → dev logger + tool middleware |
 
 ---
 
-## LLM & environment
+## Tools (50+)
 
-`createAgent` resolves a provider in this order (simplified; see `resolveLlmForCreateAgent` in source):
+```ts
+import {
+  HttpClientTool, BrowserTool,           // Web
+  EmailTool, SlackTool, DiscordTool,     // Communication
+  PostgreSQLTool, MySQLTool, SQLiteTool, // Databases
+  RedisTool, CSVTool,                    // Data
+  DuckDuckGoTool, WikipediaTool,         // Search
+  FileReadTool, FileWriteTool, ShellTool, // File system
+  StripeTool, YahooFinanceTool,          // Finance
+  GitHubTool, CalculatorAddTool,         // Dev / Utilities
+} from 'confused-ai/tools';
+```
 
-1. `options.llm` — your own `LLMProvider`
-2. `options.model` as `provider:model_id` (e.g. `openai:gpt-4o`, `anthropic:claude-3-5-sonnet-20241022`, `google:...`) with matching env keys
-3. `OPENROUTER_API_KEY` (+ optional `OPENROUTER_MODEL`)
-4. `options.apiKey` / `options.baseURL` — OpenAI-compatible `OpenAIProvider`
-5. `ANTHROPIC_API_KEY` → Anthropic
-6. `GOOGLE_API_KEY` or `GEMINI_API_KEY` → Google
-7. `OPENAI_API_KEY` (and `OPENAI_MODEL` / `OPENAI_BASE_URL` if set)
+Every tool is Zod-validated, tree-shakeable, and dependency-lazy. Build custom tools with `defineTool()`:
 
-**Direct providers:** from `confused-ai/llm` use `OpenAIProvider`, `AnthropicProvider`, `GoogleProvider`, etc., and pass `llm: new OpenAIProvider({ ... })` into `createAgent`.
+```ts
+import { defineTool } from 'confused-ai';
+import { z } from 'zod';
 
-For the step-by-step guide and the **full `createAgent` options table**, see [Creating agents](#creating-agents) above.
-
-**Imports (main package):** `import { createAgent, type CreateAgentResult } from "confused-ai"`.
+const lookupOrder = defineTool()
+  .name('lookupOrder')
+  .description('Look up an order by ID')
+  .parameters(z.object({ orderId: z.string() }))
+  .execute(async ({ orderId }) => db.orders.findById(orderId))
+  .build();
+```
 
 ---
 
-## Sessions & chat history
+## Multi-Agent Orchestration
 
-- `createSession(userId?)` → `sessionId`
-- `run(prompt, { sessionId })` — loads history from the session store and persists new turns
-- `getSessionMessages(sessionId)` for inspection
+```ts
+import { agent, compose, createSupervisor } from 'confused-ai';
+import { AgentRouter } from 'confused-ai/orchestration';
 
-Use a shared `SessionStore` (e.g. SQL) behind your `createAgent` instances if you run multiple processes.
+// Sequential pipeline — output of researcher feeds writer
+const pipeline = compose(
+  agent('Research and return key facts.'),
+  agent('Turn facts into polished reports.'),
+);
+const { text } = await pipeline.run('TypeScript 5.5 features');
+
+// Supervisor with sub-agents
+const supervisor = createSupervisor({
+  agents:       [researchAgent, writeAgent, reviewAgent],
+  instructions: 'Coordinate the team to produce a final deliverable.',
+});
+
+// Capability-based routing
+const router = new AgentRouter({ strategy: 'capability' });
+router.register(codeAgent,      ['code', 'debug']);
+router.register(analyticsAgent, ['data', 'analysis']);
+```
 
 ---
 
-## Tools
+## LLM Router
 
-- Implement with `BaseTool` + Zod `parameters`, or use built-ins from `confused-ai/tools` (calculator, HTTP, browser, file, GitHub, finance, data stores, comms, search, …).
-- Many integrations use **lazy `require()`** of third-party packages; add those dependencies to *your* app and ensure your bundler marks them as **external** (this library’s `tsup` build already does that for common optional SDKs).
-- `toToolRegistry` / `ToolRegistryImpl` to build or adapt registries.
+```ts
+import { createCostOptimizedRouter } from 'confused-ai';
 
-**MCP over HTTP:** `HttpMcpClient`, `loadMcpToolsFromUrl` (from main or tools entry) to bridge JSON-RPC `tools/list` and `tools/call` into `createAgent({ tools })`.
+const router = createCostOptimizedRouter({
+  providers: { fast: gpt4oMini, smart: gpt4o },
+});
+
+// Task type auto-detected: simple → fast, coding → smart
+const { text } = await router.run('Explain async/await in JavaScript');
+```
+
+Four built-in strategies: `balanced`, `cost`, `quality`, `speed`. Custom override rules supported.
+
+---
+
+## RAG & Knowledge
+
+```ts
+import { KnowledgeEngine, TextLoader, URLLoader, OpenAIEmbeddingProvider, InMemoryVectorStore } from 'confused-ai/knowledge';
+
+const knowledge = new KnowledgeEngine({
+  embeddingProvider: new OpenAIEmbeddingProvider({ apiKey: process.env.OPENAI_API_KEY! }),
+  vectorStore:       new InMemoryVectorStore(),
+});
+
+await knowledge.ingest([
+  ...await new TextLoader('./docs/policy.md').load(),
+  ...await new URLLoader('https://example.com/faq').load(),
+]);
+
+const agent = createAgent({
+  instructions: 'Answer questions using the knowledge base.',
+  ragEngine:    knowledge,
+});
+```
+
+---
+
+## Sessions & Memory
+
+```ts
+import { createSqliteSessionStore } from 'confused-ai/session';
+
+const agent = createAgent({
+  instructions: 'You are a helpful assistant.',
+  sessionStore: createSqliteSessionStore('./sessions.db'),
+});
+
+const sessionId = await agent.createSession('user-123');
+const r1 = await agent.run('My name is Alice.', { sessionId });
+const r2 = await agent.run('What is my name?', { sessionId }); // → "Alice"
+```
 
 ---
 
 ## Guardrails
 
-- Pass `guardrails: true` to `createAgent` for a default `GuardrailValidator` with a sensitive-data style rule, or pass a custom `GuardrailEngine`.
-- The agentic loop applies guardrails around completion when configured.
-
-**Import:** `confused-ai/guardrails` for validators, allowlists, and types.
-
----
-
-## Agentic core (`createAgenticAgent`)
-
-Lower-level ReAct loop without `createAgent`’s session persistence: same `LLMProvider` + `ToolRegistry` + optional guardrails and middleware.  
-**Import:** `import { createAgenticAgent } from "confused-ai"` or `confused-ai/agentic`.
-
----
-
-## SDK (typed `defineAgent`, workflows)
-
-Import from the main package name:
-
-- **`defineTypedAgent({ name, inputSchema, outputSchema, handler?, tools?, memory?, planner? })`** — Zod-first **SDK** `DefinedAgent` (same as `defineAgent` in `src/sdk`; exported under this name so it does not clash with the DX builder).
-- **`createWorkflow()`** — `.task(name, definedAgent).parallel() | .sequential()....execute(context)`; later tasks can read `context.results` in handlers.
-- **`asOrchestratorAgent(definedAgent)`** — adapt a `DefinedAgent` to the core `Agent` type for pipelines / orchestrator.
-- **`defineAgent()`** (no args, chainable) — **DX** fluent builder that returns a `CreateAgentResult` (see `defineAgent` in `src/dx`); this is the name `defineAgent` on the public entry.
-
 ```ts
-import {
-  createAgent,
-  defineAgent,        // DX builder: defineAgent().name('x').instructions('…').build()
-  defineTypedAgent,  // Zod: defineTypedAgent({ name, inputSchema, outputSchema, handler })
-  createWorkflow,
-  asOrchestratorAgent,
-} from "confused-ai";
+import { GuardrailValidator, createSensitiveDataRule } from 'confused-ai/guardrails';
+
+const agent = createAgent({
+  instructions: 'You are a support agent.',
+  guardrails:   new GuardrailValidator({ rules: [createSensitiveDataRule()] }),
+});
 ```
 
 ---
 
-## Core `Agent` & orchestration
+## Production Hardening
 
-- **`import { Agent, AgentContextBuilder, ... } from "confused-ai/core"`** — base class and context for custom agents.
-- **Orchestration** (`confused-ai/orchestration`): `createPipeline` (sequential handoff), `Orchestrator`, `Supervisor`, `Swarm`, `team`, `createRunnableAgent`, etc. Combine with `asOrchestratorAgent` to insert SDK agents into a pipeline.
-- **Planner** (`confused-ai/planner`): classical / LLM planners, plan types.
-- **Execution** (`confused-ai/execution`): `ExecutionEngine` for graph / worker-style runs.
+### Circuit Breakers & Rate Limits
+
+```ts
+import { withResilience } from 'confused-ai/production';
+
+const resilient = withResilience(agent, {
+  circuitBreaker: { threshold: 5, timeout: 30_000 },
+  rateLimit:      { maxRequests: 100, windowMs: 60_000 },
+  retry:          { maxAttempts: 3, backoff: 'exponential' },
+});
+```
+
+### Budget Enforcement
+
+```ts
+const agent = createAgent({
+  instructions: 'You are a helpful assistant.',
+  budget: {
+    maxUsdPerRun:  0.10,   // $0.10 per run hard cap
+    maxUsdPerUser: 5.00,   // $5.00 per user per month
+  },
+});
+// Throws BudgetExceededError before limit is crossed
+```
+
+### Human-in-the-Loop (HITL)
+
+```ts
+import { requireApprovalTool, InMemoryApprovalStore } from 'confused-ai/tools';
+import { createHttpService } from 'confused-ai/runtime';
+
+const service = createHttpService({
+  agents: { admin: adminAgent },
+  approvalStore: new InMemoryApprovalStore(),
+  // GET  /v1/approvals        — list pending
+  // POST /v1/approvals/:id    — { approved: true, decidedBy: 'admin' }
+});
+```
+
+### Multi-Tenancy
+
+```ts
+import { createTenantContext } from 'confused-ai';
+
+const ctx = createTenantContext({ tenantId: 'acme-corp', ... });
+await agent.run(prompt, { context: ctx });
+```
+
+### Audit Log & Idempotency
+
+```ts
+import { createHttpService } from 'confused-ai/runtime';
+import { SqliteAuditStore } from 'confused-ai/observability';
+
+const service = createHttpService({
+  agents:     { support: supportAgent },
+  auditStore: new SqliteAuditStore('./audit.db'),
+  // X-Idempotency-Key header → deduplicates retries automatically
+});
+```
 
 ---
 
-## Memory & knowledge
+## HTTP Runtime
 
-- **Session-scoped** messages: `createAgent` + `SessionStore` (not long-term semantic memory).
-- **Long-term & structured memory:** `MemoryStore` (`InMemoryStore`, vector store) with `defineAgent` or your own code paths — see `confused-ai/memory`.
-- **RAG / knowledge:** `RAGEngine`, loaders, engines under `confused-ai/knowledge` (hybrid search, session state, etc. as implemented in your version).
+```ts
+import { createHttpService, listenService } from 'confused-ai/runtime';
 
----
+const service = createHttpService({
+  agents:   { support: supportAgent },
+  cors:     '*',
+  openApi:  { title: 'My Agent API', version: '1.0.0' },
+  adminApi: true,
+  websocket: true,
+});
 
-## Observability
+listenService(service, { port: 3000 });
+```
 
-`confused-ai/observability`: `ConsoleLogger`, `InMemoryTracer`, `MetricsCollectorImpl`, eval metrics (`EvalAggregator`, accuracy helpers), `OTLPTraceExporter` / `OTLPMetricsExporter`.  
-Wire `Logger` into `createAgent` where supported; use tracers/metrics in custom agents or services.
-
----
-
-## Production: health, rate limits, resilience
-
-`confused-ai/production`:
-
-- **Health:** `HealthCheckManager`, `createLLMHealthCheck`, `createSessionStoreHealthCheck`, `createCustomHealthCheck`, `liveness` / `readiness` / `check`
-- **Rate limits:** `RateLimiter`, `createOpenAIRateLimiter`
-- **Circuit breaker:** `CircuitBreaker`, `createLLMCircuitBreaker`
-- **Streams:** `ResumableStreamManager`, resumable SSE helpers
-- **Shutdown:** `GracefulShutdown`, `withShutdownGuard`
+Routes: `GET /v1/health` · `GET /v1/agents` · `POST /v1/sessions` · `POST /v1/chat` (JSON + SSE stream) · `GET /v1/openapi.json` · `GET /v1/approvals` · `POST /v1/approvals/:id` · `/admin/*`
 
 ---
 
-## HTTP runtime
+## Observability & Tracing
 
-`import { createHttpService, listenService, getRuntimeOpenApiJson } from "confused-ai/runtime"`.
+```ts
+import { OTLPTraceExporter } from 'confused-ai/observability';
 
-- **Routes (also under unversioned aliases):** `GET /v1/health`, `GET /v1/agents`, `POST /v1/sessions`, `POST /v1/chat`, `GET /v1/openapi.json`, optional `GET /v1/audit` (with tracing on)
-- **Chat:** JSON body `{ "message", "agent"?, "sessionId"?, "userId"?, "stream"?: true }`  
-  - Streaming: set `"stream": true` or `Accept: text/event-stream` — SSE `data:` lines with JSON `{ "type": "chunk" | "done" | "error", ... }`
-- **CORS:** `cors: "*"` or your origin; headers include `Accept` for browser streaming
+const service = createHttpService({
+  agents:  { support: supportAgent },
+  tracer:  new OTLPTraceExporter({ endpoint: 'http://jaeger:4318/v1/traces' }),
+  metrics: new OTLPMetricsExporter({ endpoint: 'http://prometheus:4318/v1/metrics' }),
+});
+// W3C traceparent propagated across all agent-to-agent HTTP calls automatically
+// Grafana dashboard: /templates/grafana-dashboard.json
+```
 
-`getRuntimeOpenApiJson()` returns the same OpenAPI 3 document the server serves, for clients or documentation merge.
+---
+
+## MCP Client & Server
+
+```ts
+import { loadMcpToolsFromUrl } from 'confused-ai/tools';
+
+const mcpTools = await loadMcpToolsFromUrl('http://mcp-server:3001');
+const agent = createAgent({ tools: mcpTools, instructions: 'Use MCP filesystem tools.' });
+```
+
+---
+
+## Voice (TTS & STT)
+
+```ts
+import { createVoiceProvider, OpenAIVoiceAdapter } from 'confused-ai/voice';
+
+const voice = createVoiceProvider(new OpenAIVoiceAdapter({ apiKey: process.env.OPENAI_API_KEY! }));
+const audio = await voice.textToSpeech('Hello, how can I help you?');
+const text  = await voice.speechToText(audio);
+```
+
+---
+
+## Deployment
+
+Production-ready templates in [`/templates`](./templates/):
+
+```bash
+# Docker
+docker build -t my-agent . && docker run -e OPENAI_API_KEY=$KEY -p 3000:3000 my-agent
+
+# Fly.io
+fly launch && fly secrets set OPENAI_API_KEY=sk-... && fly deploy
+
+# Kubernetes
+kubectl apply -f templates/k8s.yaml
+```
+
+Includes: `Dockerfile`, `docker-compose.yml`, `fly.toml`, `render.yaml`, `k8s.yaml` with health probes, resource limits, and rolling updates.
+
+---
+
+## Subpath Packages
+
+| Import | Contents |
+|--------|---------|
+| `confused-ai` | Main barrel |
+| `confused-ai/create-agent` | Lean createAgent + env resolver |
+| `confused-ai/llm` | Providers, model resolution, embeddings |
+| `confused-ai/tools` | BaseTool, registries, 50+ built-in tools |
+| `confused-ai/orchestration` | Pipelines, supervisor, swarm, router, consensus |
+| `confused-ai/knowledge` | RAG engine, loaders, vector store |
+| `confused-ai/session` | Session stores (in-memory, SQL, SQLite) |
+| `confused-ai/memory` | Memory stores + vector-backed long-term memory |
+| `confused-ai/guardrails` | Validators, rules, content safety |
+| `confused-ai/production` | Circuit breaker, rate limiter, health checks |
+| `confused-ai/observability` | OTLP tracer, metrics, eval store, structured logger |
+| `confused-ai/runtime` | HTTP service, OpenAPI, WebSocket, admin API |
+| `confused-ai/adapters` | 20-category adapter system |
+| `confused-ai/plugins` | Plugin registry + built-in plugins |
+| `confused-ai/testing` | MockLLMProvider, MockToolRegistry, fixtures |
+| `confused-ai/contracts` | Shared interfaces — zero runtime code |
+
+---
+
+## LLM Providers
+
+| Provider | Environment variable |
+|----------|---------------------|
+| OpenAI (GPT-4o, o1, …) | `OPENAI_API_KEY` |
+| Anthropic Claude | `ANTHROPIC_API_KEY` |
+| Google Gemini | `GOOGLE_API_KEY` or `GEMINI_API_KEY` |
+| OpenRouter (100+ models) | `OPENROUTER_API_KEY` |
+| Azure OpenAI | `OPENAI_API_KEY` + `OPENAI_BASE_URL` |
+| AWS Bedrock | `@aws-sdk/client-bedrock-runtime` peer dep |
+| Any OpenAI-compatible | Pass `apiKey` + `baseURL` to `createAgent` |
+
+---
+
+## Testing
+
+```ts
+import { MockLLMProvider } from 'confused-ai/testing';
+
+const mockLLM = new MockLLMProvider([{ text: 'The answer is 42', tool_calls: [] }]);
+const agent = createAgenticAgent({ name: 'Test', llm: mockLLM, tools: new MockToolRegistry() });
+const { text } = await agent.run({ prompt: 'What is the answer?' });
+expect(text).toBe('The answer is 42');
+```
+
+99 passing tests covering circuit breakers, rate limiters, JWT RBAC, LLM caching, guardrails, and more. See [`/tests`](./tests/).
 
 ---
 
 ## CLI
 
-`package.json` `"bin"`: `confused-ai` → `dist/cli.js` after `npm run build`. Run `npx confused-ai --help` for subcommands (build from source in dev: `bun` / `node` against built output).
+```bash
+npx confused-ai --help   # after npm install or npm run build
+```
 
 ---
 
-## Extensions, learning, config
+## Enterprise Checklist
 
-- **`confused-ai/extensions`:** plug DB/adapters, middleware across tools
-- **Learning** (main or dedicated exports): user profiles, learning modes — see `src/learning` types
-- **`confused-ai/config`:** load and validate environment / YAML-style config in apps that use the framework
-
----
-
-## Artifacts, voice, video
-
-- **Artifacts** (`confused-ai/artifacts`): structured artifacts (plans, data blobs) and storage abstractions
-- **Voice** (`confused-ai/voice`): STT/TTS abstractions
-- **Video** (`import ... from "confused-ai"` or video entry): `VideoOrchestrator` and related helpers; OpenAI + Pexels are initialized **lazily** when you use video features, not on every import
+- [x] **Security** — Guardrails, JWT RBAC, secret-manager adapters (AWS, Azure Key Vault, HashiCorp Vault, GCP), Zod-validated tool inputs
+- [x] **Reliability** — Circuit breakers, retry with backoff, Redis distributed rate limiting, graceful shutdown, checkpoint/resume
+- [x] **Compliance** — Persistent audit log, idempotency keys, per-user USD budget caps, W3C trace-context
+- [x] **Observability** — OTLP tracing, structured logging, eval store, health endpoints, Grafana dashboard template
+- [x] **Deployment** — Docker, Compose, Kubernetes, Fly.io, Render templates with health probes
+- [x] **Testing** — MockLLMProvider, MockToolRegistry, Vitest-compatible fixtures, 99 passing tests
 
 ---
 
-## MCP (HTTP) tools
+## Contributing
 
-Use `loadMcpToolsFromUrl` or `HttpMcpClient` to discover and call tools exposed over HTTP JSON-RPC (`tools/list`, `tools/call`), then pass the resulting tools into `createAgent({ tools: [...] })`.
+```bash
+git clone https://github.com/your-org/agent-framework
+cd agent-framework && bun install
+bun test          # 99 tests
+bun run build     # tsup
+bun run docs:dev  # VitePress docs site
+```
 
----
-
-## Examples in this repo
-
-| Command | What it does |
-|---------|----------------|
-| `bun run example:simple` | Minimal `createAgent` from `confused-ai/create-agent`, optional tools, `examples/.env` |
-| `bun run example:showcase` | Sessions, tools, guardrails, metrics, health, `defineAgent`, workflow, pipeline, `getRuntimeOpenApiJson` |
-| `bun run example:showcase -- --http` | Same agent exposed via `createHttpService` (optionally `--port=8787`) |
-| `bun run example:potential` | Extra stack **without** LLM: chunking (`splitText`), circuit breaker, rate limiter, artifacts, user profiles, eval metrics, `loadConfig` (uses `examples/.env` if present) |
-
-Requires a working LLM key in `examples/.env` (e.g. `OPENAI_API_KEY`).
-
-When published to npm, only **`dist/**`** is in the package (TypeScript `src` is not); examples are for Git clone / development.
+See [CONTRIBUTING.md](./CONTRIBUTING.md).
 
 ---
 
 ## Telemetry
 
-**Off by default.** Set `CONFUSED_AI_TELEMETRY=1` and optional `CONFUSED_AI_TELEMETRY_URL` to send a minimal framework startup event (no prompts, no PII).
+**Off by default.** Set `CONFUSED_AI_TELEMETRY=1` to send a minimal framework startup event. No prompts, no PII ever.
 
 ---
 
 ## License
 
-MIT
+[MIT](./LICENSE) — Copyright © 2024-present confused-ai contributors
