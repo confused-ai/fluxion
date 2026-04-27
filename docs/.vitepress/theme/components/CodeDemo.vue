@@ -119,79 +119,92 @@ const { text } = await ai.run('What is the refund policy?');`,
 const active = ref(0);
 
 // ── Syntax highlighter ───────────────────────────────────────
-// Processes one token category at a time using placeholders so
-// strings/comments are extracted first and never re-processed.
+// Position-based tokenizer: collect token ranges on the ORIGINAL
+// source line, then emit HTML in one pass — regex never runs on
+// already-generated HTML so attribute names can't be re-matched.
 function highlight(code: string): string {
+  function esc(s: string): string {
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  const KW = new Set([
+    'import','export','from','default','const','let','var',
+    'await','async','return','new','true','false','null',
+    'undefined','type','interface','extends','implements',
+    'class','function','of','in','if','else','for','while',
+    'throw','try','catch','as','typeof','void','this','super',
+    'static','readonly','public','private','protected','abstract',
+    'declare','namespace','enum','keyof','infer','satisfies',
+  ]);
+
   return code
     .split('\n')
-    .map((rawLine) => {
-      // 1. HTML-escape
-      let line = rawLine
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;');
+    .map((line) => {
+      type Span = { s: number; e: number; cls: string };
+      const spans: Span[] = [];
 
-      // 2. Extract strings & comments into placeholders
-      const slots: string[] = [];
-      const ph = (html: string) => {
-        slots.push(html);
-        return `\x00${slots.length - 1}\x00`;
+      // Only add if it doesn't overlap any already-claimed span
+      const add = (s: number, e: number, cls: string) => {
+        if (spans.some((t) => s < t.e && e > t.s)) return;
+        spans.push({ s, e, cls });
       };
 
-      // Line comments first
-      line = line.replace(/(\/\/.*)$/, (m) =>
-        ph(`<span class="t-cm">${m}</span>`),
-      );
+      let m: RegExpExecArray | null;
 
-      // Template / single / double-quoted strings
-      line = line.replace(
-        /(`(?:[^`\\]|\\.)*`|'(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*")/g,
-        (m) => ph(`<span class="t-s">${m}</span>`),
-      );
+      // 1. Strings — highest priority, claimed first
+      const strRe =
+        /(`(?:[^`\\]|\\.)*`|'(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*")/g;
+      while ((m = strRe.exec(line)) !== null) {
+        add(m.index, m.index + m[0].length, 't-s');
+      }
 
-      // 3. Keywords
-      const kw = [
-        'import','export','from','default','const','let','var',
-        'await','async','return','new','true','false','null',
-        'undefined','type','interface','extends','implements',
-        'class','function','of','in','if','else','for','while',
-        'throw','try','catch','as',
-      ];
-      kw.forEach((k) => {
-        line = line.replace(
-          new RegExp(`\\b(${k})\\b`, 'g'),
-          `<span class="t-kw">$1</span>`,
-        );
-      });
+      // 2. Line comment — first `//` not inside a string
+      for (let i = 0; i < line.length - 1; i++) {
+        if (line[i] === '/' && line[i + 1] === '/') {
+          if (!spans.some((t) => i >= t.s && i < t.e)) {
+            add(i, line.length, 't-cm');
+            break;
+          }
+        }
+      }
+
+      // 3. Identifiers — keywords, types, functions, keys (single pass)
+      const idRe = /\b([a-zA-Z_$][a-zA-Z0-9_$]*)\b/g;
+      while ((m = idRe.exec(line)) !== null) {
+        const w = m[1];
+        const s = m.index;
+        const e = s + w.length;
+        if (KW.has(w)) {
+          add(s, e, 't-kw');
+        } else if (/^[A-Z][a-zA-Z0-9]*$/.test(w)) {
+          add(s, e, 't-t');
+        } else {
+          const rest = line.slice(e);
+          if (/^\s*\(/.test(rest)) {
+            add(s, e, 't-fn');
+          } else if (/^\s*:(?!:)/.test(rest)) {
+            add(s, e, 't-k');
+          }
+        }
+      }
 
       // 4. Numbers
-      line = line.replace(
-        /\b(\d[\d_]*(?:\.\d+)?)\b/g,
-        `<span class="t-n">$1</span>`,
-      );
+      const numRe = /\b(\d[\d_]*(?:\.\d+)?)\b/g;
+      while ((m = numRe.exec(line)) !== null) {
+        add(m.index, m.index + m[0].length, 't-n');
+      }
 
-      // 5. PascalCase identifiers (types / classes / constructors)
-      line = line.replace(
-        /\b([A-Z][a-zA-Z0-9]+)\b/g,
-        `<span class="t-t">$1</span>`,
-      );
-
-      // 6. Function / method calls
-      line = line.replace(
-        /\b([a-z_$][a-zA-Z0-9_$]*)(?=\()/g,
-        `<span class="t-fn">$1</span>`,
-      );
-
-      // 7. Object keys  (word followed by colon)
-      line = line.replace(
-        /\b([a-zA-Z_$][a-zA-Z0-9_$]*)(\s*:)/g,
-        `<span class="t-k">$1</span>$2`,
-      );
-
-      // 8. Restore placeholders
-      line = line.replace(/\x00(\d+)\x00/g, (_, i) => slots[+i]);
-
-      return `<span class="ln">${line}</span>`;
+      // Emit: iterate source positions, HTML-escape plain text, wrap tokens
+      spans.sort((a, b) => a.s - b.s);
+      let out = '';
+      let pos = 0;
+      for (const sp of spans) {
+        if (sp.s > pos) out += esc(line.slice(pos, sp.s));
+        out += `<span class="${sp.cls}">${esc(line.slice(sp.s, sp.e))}</span>`;
+        pos = sp.e;
+      }
+      if (pos < line.length) out += esc(line.slice(pos));
+      return `<span class="ln">${out}</span>`;
     })
     .join('\n');
 }
