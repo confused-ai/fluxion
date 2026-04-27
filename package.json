@@ -1,6 +1,6 @@
 {
     "name": "confused-ai",
-    "version": "1.1.3",
+    "version": "1.1.4",
     "description": "TypeScript framework for building production-grade AI agents, teams, and services",
     "type": "module",
     "files": [
@@ -366,11 +366,11 @@
     "license": "MIT",
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/rvuyyuru2/agent-framework.git"
+        "url": "git+https://github.com/confused-ai/confused-ai"
     },
-    "homepage": "https://rvuyyuru2.github.io/agent-framework/",
+    "homepage": "https://confused-ai.github.io/confused-ai/",
     "bugs": {
-        "url": "https://github.com/rvuyyuru2/agent-framework/issues"
+        "url": "https://github.com/confused-ai/confused-ai/issues"
     },
     "funding": {
         "type": "github",
