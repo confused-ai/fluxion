@@ -1,4 +1,117 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
-  <rect width="100" height="100" rx="20" fill="#646cff"/>
-  <text x="50" y="62" font-family="monospace" font-size="40" font-weight="bold" fill="white" text-anchor="middle">AI</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120" role="img" aria-label="Confused-AI logo">
+  <defs>
+    <!-- Background: brand purple → brand cyan -->
+    <linearGradient id="ca-bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%"   stop-color="#6d28d9"/>
+      <stop offset="55%"  stop-color="#7c3aed"/>
+      <stop offset="100%" stop-color="#0891b2"/>
+    </linearGradient>
+
+    <!-- Node fill: light purple → light cyan -->
+    <linearGradient id="ca-node" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%"   stop-color="#e9d5ff"/>
+      <stop offset="100%" stop-color="#a5f3fc"/>
+    </linearGradient>
+
+    <!-- Accent line gradient for hub spokes -->
+    <linearGradient id="ca-spoke-top"  x1="60" y1="60" x2="60"  y2="24"  gradientUnits="userSpaceOnUse">
+      <stop offset="0%"   stop-color="rgba(255,255,255,0.7)"/>
+      <stop offset="100%" stop-color="rgba(255,255,255,0.25)"/>
+    </linearGradient>
+    <linearGradient id="ca-spoke-bl"   x1="60" y1="60" x2="31"  y2="82"  gradientUnits="userSpaceOnUse">
+      <stop offset="0%"   stop-color="rgba(255,255,255,0.7)"/>
+      <stop offset="100%" stop-color="rgba(255,255,255,0.25)"/>
+    </linearGradient>
+    <linearGradient id="ca-spoke-br"   x1="60" y1="60" x2="89"  y2="82"  gradientUnits="userSpaceOnUse">
+      <stop offset="0%"   stop-color="rgba(255,255,255,0.7)"/>
+      <stop offset="100%" stop-color="rgba(255,255,255,0.25)"/>
+    </linearGradient>
+
+    <!-- Soft node glow -->
+    <filter id="ca-glow" x="-70%" y="-70%" width="240%" height="240%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <!-- Subtle line glow -->
+    <filter id="ca-line-glow" x="-5%" y="-5%" width="110%" height="110%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="0.8" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <!-- Clip to squircle -->
+    <clipPath id="ca-clip">
+      <rect width="120" height="120" rx="27"/>
+    </clipPath>
+  </defs>
+
+  <!-- ── Background ──────────────────────────────────────── -->
+  <rect width="120" height="120" rx="27" fill="url(#ca-bg)"/>
+
+  <!-- Subtle top-half highlight for glass depth -->
+  <rect x="0" y="0" width="120" height="62" rx="27"
+        fill="rgba(255,255,255,0.055)" clip-path="url(#ca-clip)"/>
+
+  <!-- Decorative concentric rings -->
+  <circle cx="60" cy="60" r="46" fill="none"
+          stroke="rgba(255,255,255,0.07)" stroke-width="0.75"/>
+  <circle cx="60" cy="60" r="37" fill="none"
+          stroke="rgba(255,255,255,0.05)" stroke-width="0.5"/>
+
+  <!-- ── Outer triangle edges (faint) ───────────────────── -->
+  <g filter="url(#ca-line-glow)">
+    <line x1="60" y1="24" x2="31" y2="82"
+          stroke="rgba(255,255,255,0.18)" stroke-width="1"
+          stroke-linecap="round"/>
+    <line x1="60" y1="24" x2="89" y2="82"
+          stroke="rgba(255,255,255,0.18)" stroke-width="1"
+          stroke-linecap="round"/>
+    <line x1="31" y1="82" x2="89" y2="82"
+          stroke="rgba(255,255,255,0.18)" stroke-width="1"
+          stroke-linecap="round"/>
+  </g>
+
+  <!-- ── Hub → agent spokes (bright) ───────────────────── -->
+  <g filter="url(#ca-line-glow)">
+    <line x1="60" y1="60" x2="60"  y2="26"
+          stroke="url(#ca-spoke-top)" stroke-width="1.75"
+          stroke-linecap="round"/>
+    <line x1="60" y1="60" x2="33"  y2="80"
+          stroke="url(#ca-spoke-bl)" stroke-width="1.75"
+          stroke-linecap="round"/>
+    <line x1="60" y1="60" x2="87"  y2="80"
+          stroke="url(#ca-spoke-br)" stroke-width="1.75"
+          stroke-linecap="round"/>
+  </g>
+
+  <!-- ── Satellite agent nodes ──────────────────────────── -->
+  <!-- Top -->
+  <circle cx="60" cy="24" r="11" fill="rgba(255,255,255,0.09)"
+          filter="url(#ca-glow)"/>
+  <circle cx="60" cy="24" r="7.5" fill="url(#ca-node)"/>
+  <circle cx="60" cy="24" r="4"   fill="white"/>
+
+  <!-- Bottom-left -->
+  <circle cx="31" cy="82" r="11" fill="rgba(255,255,255,0.09)"
+          filter="url(#ca-glow)"/>
+  <circle cx="31" cy="82" r="7.5" fill="url(#ca-node)"/>
+  <circle cx="31" cy="82" r="4"   fill="white"/>
+
+  <!-- Bottom-right -->
+  <circle cx="89" cy="82" r="11" fill="rgba(255,255,255,0.09)"
+          filter="url(#ca-glow)"/>
+  <circle cx="89" cy="82" r="7.5" fill="url(#ca-node)"/>
+  <circle cx="89" cy="82" r="4"   fill="white"/>
+
+  <!-- ── Central orchestrator hub ───────────────────────── -->
+  <circle cx="60" cy="60" r="15" fill="rgba(255,255,255,0.1)"
+          filter="url(#ca-glow)"/>
+  <circle cx="60" cy="60" r="11" fill="url(#ca-node)"/>
+  <circle cx="60" cy="60" r="6.5" fill="white"/>
 </svg>

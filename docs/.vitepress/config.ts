@@ -19,8 +19,8 @@ export default defineConfig({
 
     head: [
         // Favicon & theme
-        ['link', { rel: 'icon', type: 'image/svg+xml', href: `${base}logo.svg` }],
-        ['link', { rel: 'shortcut icon', href: `${base}favicon.ico` }],
+        ['link', { rel: 'icon', type: 'image/svg+xml', href: `${base}favicon.svg` }],
+        ['link', { rel: 'shortcut icon', href: `${base}favicon.svg` }],
         ['meta', { name: 'theme-color', content: '#8b5cf6' }],
 
         // Open Graph
@@ -28,14 +28,14 @@ export default defineConfig({
         ['meta', { property: 'og:site_name', content: 'Confused-AI' }],
         ['meta', { property: 'og:title', content: 'Confused-AI — Production-Grade AI Agent Framework' }],
         ['meta', { property: 'og:description', content: 'Build and ship AI agents in TypeScript. 100+ tools, multi-agent orchestration, circuit breakers, budget caps, HITL, MCP, OTLP tracing — zero magic, every escape hatch open.' }],
-        ['meta', { property: 'og:image', content: `${SITE_URL}/og-banner.png` }],
+        ['meta', { property: 'og:image', content: `${SITE_URL}/og-banner.svg` }],
         ['meta', { property: 'og:url', content: SITE_URL }],
 
         // Twitter / X
         ['meta', { name: 'twitter:card', content: 'summary_large_image' }],
         ['meta', { name: 'twitter:title', content: 'Confused-AI — Production-Grade AI Agent Framework' }],
         ['meta', { name: 'twitter:description', content: 'Build and ship AI agents in TypeScript. 100+ tools, multi-agent orchestration, circuit breakers, budget caps, HITL, MCP.' }],
-        ['meta', { name: 'twitter:image', content: `${SITE_URL}/og-banner.png` }],
+        ['meta', { name: 'twitter:image', content: `${SITE_URL}/og-banner.svg` }],
 
         // SEO
         ['meta', { name: 'keywords', content: 'AI agent framework, TypeScript AI agents, LLM orchestration, multi-agent, RAG, MCP, production AI, OpenAI, Anthropic, Google Gemini' }],
@@ -68,8 +68,8 @@ export default defineConfig({
                 items: [
                     { text: 'Changelog', link: '/changelog' },
                     { text: 'npm', link: 'https://www.npmjs.com/package/confused-ai' },
-                    { text: 'Releases', link: 'https://github.com/rvuyyuru2/agent-framework/releases' },
-                    { text: 'Contributing', link: 'https://github.com/rvuyyuru2/agent-framework/blob/main/CONTRIBUTING.md' },
+                    { text: 'Releases', link: 'https://github.com/confused-ai/confused-ai/releases' },
+                    { text: 'Contributing', link: 'https://github.com/confused-ai/confused-ai/blob/main/CONTRIBUTING.md' },
                 ],
             },
         ],
@@ -223,13 +223,13 @@ export default defineConfig({
         },
 
         socialLinks: [
-            { icon: 'github', link: 'https://github.com/rvuyyuru2/agent-framework' },
+            { icon: 'github', link: 'https://github.com/confused-ai/confused-ai' },
             { icon: 'npm', link: 'https://www.npmjs.com/package/confused-ai' },
         ],
 
         footer: {
-            message: 'Released under the <a href="https://github.com/rvuyyuru2/agent-framework/blob/main/LICENSE">MIT License</a>.',
-            copyright: 'Copyright © 2024-present Confused-AI contributors',
+            message: 'Released under the <a href="https://github.com/confused-ai/confused-ai/blob/main/LICENSE">MIT License</a>.',
+            copyright: 'Copyright © 2024-present Raja Shekar Reddy Vuyyuru',
         },
 
         search: {
@@ -240,7 +240,7 @@ export default defineConfig({
         },
 
         editLink: {
-            pattern: 'https://github.com/rvuyyuru2/agent-framework/edit/main/docs/:path',
+            pattern: 'https://github.com/confused-ai/confused-ai/edit/main/docs/:path',
             text: 'Edit this page on GitHub',
         },
 

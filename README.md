@@ -6,17 +6,17 @@
     ReAct-loop agents · 100+ built-in tools · Multi-agent orchestration · RAG · MCP · Circuit breakers · Budget caps · HITL · OTLP tracing
   </p>
 
-  [![CI](https://github.com/rvuyyuru2/agent-framework/actions/workflows/ci.yml/badge.svg)](https://github.com/rvuyyuru2/agent-framework/actions/workflows/ci.yml)
-  [![CodeQL](https://github.com/rvuyyuru2/agent-framework/actions/workflows/codeql.yml/badge.svg)](https://github.com/rvuyyuru2/agent-framework/actions/workflows/codeql.yml)
+  [![CI](https://github.com/confused-ai/confused-ai/actions/workflows/ci.yml/badge.svg)](https://github.com/confused-ai/confused-ai/actions/workflows/ci.yml)
+  [![CodeQL](https://github.com/confused-ai/confused-ai/actions/workflows/codeql.yml/badge.svg)](https://github.com/confused-ai/confused-ai/actions/workflows/codeql.yml)
   [![npm version](https://img.shields.io/npm/v/confused-ai?color=8b5cf6&logo=npm&label=Confused-AI)](https://www.npmjs.com/package/confused-ai)
   [![npm downloads](https://img.shields.io/npm/dm/confused-ai?color=22d3ee&logo=npm)](https://www.npmjs.com/package/confused-ai)
   [![License: MIT](https://img.shields.io/badge/license-MIT-22c55e.svg)](./LICENSE)
   [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178c6.svg?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
   [![Node.js](https://img.shields.io/badge/node-%3E%3D18-brightgreen?logo=node.js&logoColor=white)](https://nodejs.org/)
   [![Docs](https://img.shields.io/badge/docs-vitepress-8b5cf6?logo=vitepress)](https://rvuyyuru2.github.io/agent-framework/)
-  [![GitHub Stars](https://img.shields.io/github/stars/rvuyyuru2/agent-framework?style=social)](https://github.com/rvuyyuru2/agent-framework)
-  [![GitHub Issues](https://img.shields.io/github/issues/rvuyyuru2/agent-framework?color=f97316)](https://github.com/rvuyyuru2/agent-framework/issues)
-  [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/rvuyyuru2/agent-framework/blob/main/CONTRIBUTING.md)
+  [![GitHub Stars](https://img.shields.io/github/stars/confused-ai/confused-ai?style=social)](https://github.com/confused-ai/confused-ai)
+  [![GitHub Issues](https://img.shields.io/github/issues/confused-ai/confused-ai?color=f97316)](https://github.com/confused-ai/confused-ai/issues)
+  [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/confused-ai/confused-ai/blob/main/CONTRIBUTING.md)
 
   <p>
     <a href="https://rvuyyuru2.github.io/agent-framework/"><strong>Documentation</strong></a> ·
@@ -625,8 +625,8 @@ confused-ai diff --run-id-a <baseline> --run-id-b <new>
 ## Contributing
 
 ```bash
-git clone https://github.com/rvuyyuru2/agent-framework
-cd agent-framework && bun install
+git clone https://github.com/confused-ai/confused-ai.git
+cd confused-ai && bun install
 bun test          # 99 tests
 bun run build     # tsup
 bun run docs:dev  # VitePress docs site
@@ -644,4 +644,4 @@ See [CONTRIBUTING.md](./CONTRIBUTING.md).
 
 ## License
 
-[MIT](./LICENSE) — Copyright © 2024-present confused-ai contributors
+[MIT](./LICENSE) — Copyright © 2024-present Raja Shekar Reddy Vuyyuru

@@ -2,27 +2,55 @@
    confused-ai — custom VitePress theme
    ========================================================= */
 
-/* ── Brand colours ──────────────────────────────────────── */
+/* ── Brand colour palette ───────────────────────────────── */
 :root {
-  --vp-c-brand-1: #8b5cf6;
-  --vp-c-brand-2: #7c3aed;
-  --vp-c-brand-3: #6d28d9;
+  /* Core brand */
+  --ca-purple-900: #3b0764;
+  --ca-purple-800: #4c1d95;
+  --ca-purple-700: #6d28d9;
+  --ca-purple-600: #7c3aed;
+  --ca-purple-500: #8b5cf6;
+  --ca-purple-400: #a78bfa;
+  --ca-purple-300: #c4b5fd;
+  --ca-purple-200: #ddd6fe;
+  --ca-purple-100: #ede9fe;
+
+  /* Accent cyan */
+  --ca-cyan-700:  #0e7490;
+  --ca-cyan-600:  #0891b2;
+  --ca-cyan-500:  #06b6d4;
+  --ca-cyan-400:  #22d3ee;
+  --ca-cyan-300:  #67e8f9;
+  --ca-cyan-200:  #a5f3fc;
+
+  /* Gradient shorthands */
+  --ca-gradient:           linear-gradient(135deg, #a855f7 0%, #22d3ee 100%);
+  --ca-gradient-subtle:    linear-gradient(135deg, rgba(168,85,247,0.15) 0%, rgba(34,211,238,0.1) 100%);
+  --ca-gradient-border:    linear-gradient(135deg, rgba(168,85,247,0.5) 0%, rgba(34,211,238,0.5) 100%);
+  --ca-gradient-text:      linear-gradient(135deg, #a855f7 20%, #22d3ee 80%);
+  --ca-gradient-dark-bg:   linear-gradient(135deg, #0f0720 0%, #1e0a3c 50%, #0a1628 100%);
+
+  /* VitePress brand overrides */
+  --vp-c-brand-1:    var(--ca-purple-500);
+  --vp-c-brand-2:    var(--ca-purple-600);
+  --vp-c-brand-3:    var(--ca-purple-700);
   --vp-c-brand-soft: rgba(139, 92, 246, 0.12);
-  --ca-gradient: linear-gradient(135deg, #a855f7 0%, #22d3ee 100%);
 }
 
 .dark {
-  --vp-c-brand-1: #a78bfa;
-  --vp-c-brand-2: #8b5cf6;
-  --vp-c-brand-3: #7c3aed;
+  --vp-c-brand-1:    var(--ca-purple-400);
+  --vp-c-brand-2:    var(--ca-purple-500);
+  --vp-c-brand-3:    var(--ca-purple-600);
   --vp-c-brand-soft: rgba(167, 139, 250, 0.16);
-  --ca-gradient: linear-gradient(135deg, #c084fc 0%, #67e8f9 100%);
+  --ca-gradient:         linear-gradient(135deg, #c084fc 0%, #67e8f9 100%);
+  --ca-gradient-text:    linear-gradient(135deg, #c084fc 20%, #67e8f9 80%);
+  --ca-gradient-subtle:  linear-gradient(135deg, rgba(192,132,252,0.15) 0%, rgba(103,232,249,0.1) 100%);
 }
 
 /* ── Hero — gradient text & radial glow ─────────────────── */
 :root {
   --vp-home-hero-name-color: transparent;
-  --vp-home-hero-name-background: linear-gradient(135deg, #a855f7 20%, #22d3ee 80%);
+  --vp-home-hero-name-background: var(--ca-gradient-text);
   --vp-home-hero-image-background-image: radial-gradient(
     ellipse 80% 80% at 50% 50%,
     rgba(168, 85, 247, 0.4),
@@ -316,5 +344,42 @@ button:focus-visible {
   border-radius: 4px;
   margin-left: 6px;
   vertical-align: middle;
+}
+
+/* ── Enterprise landing page sections ───────────────────── */
+.ca-landing-sections {
+  width: 100%;
+}
+
+/* Subtle alternating band effect between the hero & sections */
+.VPHome .VPHomeFeatures {
+  padding-bottom: 0;
+}
+
+/* Code demo wrapper below features */
+.ca-landing-sections > .ca-code-demo-wrap {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 48px 24px 0;
+}
+
+/* Section dividers via gradient rule */
+.ca-landing-sections > * + * {
+  border-top: 1px solid var(--vp-c-divider);
+}
+
+/* Hero badge pulse animation */
+@keyframes ca-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.4); }
+  50%       { box-shadow: 0 0 0 6px rgba(139, 92, 246, 0); }
+}
+
+.ca-ann-badge {
+  animation: ca-pulse 2.8s ease-in-out infinite;
+}
+
+/* Tighten hero image spacing when announcement banner is above */
+.VPHero {
+  padding-top: 24px !important;
 }
 

@@ -11,7 +11,7 @@ Thank you for contributing! This guide covers how to set up the project, the cod
 
 ```bash
 # Clone and install
-git clone https://github.com/your-org/agent-framework.git
+git clone https://github.com/confused-ai/confused-ai.git
 cd agent-framework
 bun install
 
