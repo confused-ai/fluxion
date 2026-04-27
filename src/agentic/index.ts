@@ -48,6 +48,8 @@ export function createAgenticAgent(config: {
     budgetEnforcer?: import('../production/budget.js').BudgetEnforcer;
     /** Model ID for budget cost estimation */
     budgetModelId?: string;
+    /** Knowledgebase instance for RAG */
+    knowledgebase?: import('../knowledge/types.js').RAGEngine;
 }): {
     name: string;
     instructions: string;

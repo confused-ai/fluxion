@@ -39,6 +39,9 @@ export interface RAGEngine {
 
     /** Ingest documents/chunks for later retrieval */
     ingest?(chunks: Array<{ content: string; metadata?: Record<string, unknown> }>): Promise<void>;
+
+    /** Build context string from retrieved chunks */
+    buildContext?(query: string, options?: RAGQueryOptions): Promise<string>;
 }
 
 /** Hybrid search: combine vector similarity + keyword (e.g. BM25). */

@@ -318,7 +318,7 @@ export function createAgent(options: CreateAgentOptions): CreateAgentResult {
 
             let result;
             try {
-                const ragContext = options.knowledgebase ? await options.knowledgebase.buildContext(promptText) : undefined;
+                const ragContext = (options.knowledgebase && options.knowledgebase.buildContext) ? await options.knowledgebase.buildContext(promptText) : undefined;
                 result = await agent.run(
                     {
                         prompt: messages ? '' : promptText,
