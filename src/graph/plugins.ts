@@ -39,8 +39,6 @@ export class TelemetryPlugin implements GraphPlugin {
     executionTimingsHead: 0, // head pointer for O(1) amortised eviction
   };
   // head pointers per nodeId — stored alongside timings in the Map value
-  private nodeTimingsHead = new Map<NodeId, number>();
-
   async onExecutionStart(_executionId: ExecutionId): Promise<void> {
     this.metrics.totalExecutions++;
   }

@@ -123,6 +123,11 @@ export function createMockAgent(options: MockAgentOptions): MockAgentHandle {
             return `mock-session-${Date.now()}`;
         },
 
+        async *stream(prompt: string, opts?: Record<string, unknown>): AsyncIterable<string> {
+            const result = await agent.run(prompt, opts);
+            yield result.text;
+        },
+
         getSessionMessages(_sessionId: string) {
             return Promise.resolve([]);
         },

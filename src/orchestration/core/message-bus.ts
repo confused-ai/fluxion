@@ -20,7 +20,6 @@ import type { EntityId } from '../../core/types.js';
  */
 export class MessageBusImpl implements MessageBus {
     private messages: AgentMessage[] = [];
-    private messagesHead = 0; // head pointer for O(1) amortised dequeue
     private static readonly MAX_HISTORY = 10_000; // cap to prevent unbounded growth
     private subscriptions: Map<EntityId, Set<SubscriptionImpl>> = new Map();
     private pendingRequests: Map<string, { resolve: (value: unknown) => void; reject: (error: Error) => void; timeout: ReturnType<typeof setTimeout> }> = new Map();

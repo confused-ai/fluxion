@@ -136,7 +136,7 @@ export class ToolCompressor {
         }
     }
 
-    private _truncate(result: unknown, serialised: string, original: number): string {
+    private _truncate(_result: unknown, serialised: string, original: number): string {
         const cutAt = this._maxBytes - this._suffix.length;
         const compressed = serialised.slice(0, cutAt) + this._suffix;
         this._compressions++;

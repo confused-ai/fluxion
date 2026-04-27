@@ -508,7 +508,7 @@ export class SwarmOrchestrator {
         while (remaining.size > 0) {
             // Find subtasks with all dependencies satisfied — O(remaining) per stage
             const readySubtasks: Subtask[] = [];
-            for (const [id, s] of remaining) {
+            for (const [, s] of remaining) {
                 if (s.dependencies.every(dep => completed.has(dep))) {
                     readySubtasks.push(s);
                 }

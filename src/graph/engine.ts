@@ -138,7 +138,7 @@ export class DAGEngine {
       this.state = { ...options.resumeFrom.state };
       this.sequence = options.resumeFrom.sequence;
       // Rebuild in-memory Set from restored serialised array
-      this._activeNodeSet = new Set(this.state.activeNodes);
+      this._activeNodeSet = new Set(this.state.activeNodes as NodeId[]);
       this._emitEvent(GraphEventType.CHECKPOINT_LOADED, undefined, {
         sequence: options.resumeFrom.sequence,
       });

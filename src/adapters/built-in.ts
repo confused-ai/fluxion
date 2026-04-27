@@ -133,6 +133,10 @@ function topKByScore<T>(items: T[], getScore: (item: T) => number, k: number): T
     return heap.sort((a, b) => getScore(b) - getScore(a));
 }
 
+// ── Base adapter ──────────────────────────────────────────────────────────
+
+abstract class BaseAdapter {
+    protected _connected = false;
 
     isConnected(): boolean {
         return this._connected;
