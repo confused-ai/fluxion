@@ -62,9 +62,6 @@ export default defineConfig({
         // Timeout for async operations
         testTimeout: 30000,
         
-        // Watch mode ignore patterns
-        watchExclude: ['**/node_modules/**', '**/dist/**'],
-        
         // Reporter configuration
         reporters: ['verbose'],
         
@@ -107,6 +104,12 @@ export default defineConfig({
             '@confused-ai/voice': new URL('./packages/voice/src/index.ts', import.meta.url).pathname,
             '@confused-ai/plugins': new URL('./packages/plugins/src/index.ts', import.meta.url).pathname,
             '@confused-ai/sdk': new URL('./packages/sdk/src/index.ts', import.meta.url).pathname,
+        },
+    },
+
+    server: {
+        watch: {
+            ignored: ['**/node_modules/**', '**/dist/**'],
         },
     },
 });

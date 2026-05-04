@@ -20,9 +20,9 @@ interface LLMProvider {
     generateText(prompt: string, options?: { temperature?: number; maxTokens?: number }): Promise<string>;
 }
 
-type PlanId = Plan['id'];
-type TaskId = Task['id'];
-type TaskDependencies = Task['dependencies'];
+type PlanId = string;
+type TaskId = string;
+type TaskDependencies = string[];
 
 /**
  * LLM-based planner that uses language models for task decomposition
@@ -121,11 +121,12 @@ export class LLMPlanner implements Planner {
             const task = taskMap.get(taskId);
             if (task) {
                 for (const depId of task.dependencies) {
-                    if (!visited.has(depId)) {
-                        if (hasCycle(depId, taskMap)) {
+                    const normalizedDepId = this.normalizeId(depId as unknown);
+                    if (!visited.has(normalizedDepId)) {
+                        if (hasCycle(normalizedDepId, taskMap)) {
                             return true;
                         }
-                    } else if (recursionStack.has(depId)) {
+                    } else if (recursionStack.has(normalizedDepId)) {
                         return true;
                     }
                 }
@@ -135,13 +136,15 @@ export class LLMPlanner implements Planner {
             return false;
         };
 
-        const taskMap = new Map(plan.tasks.map(t => [t.id, t]));
+        const taskMap = new Map(plan.tasks.map((task) => [this.normalizeId(task.id as unknown), task]));
 
         for (const task of plan.tasks) {
-            if (!visited.has(task.id)) {
-                if (hasCycle(task.id, taskMap)) {
+            const taskId = this.normalizeId(task.id as unknown);
+
+            if (!visited.has(taskId)) {
+                if (hasCycle(taskId, taskMap)) {
                     errors.push({
-                        taskId: task.id,
+                        taskId,
                         message: 'Circular dependency detected',
                         severity: 'error',
                     });
@@ -150,10 +153,11 @@ export class LLMPlanner implements Planner {
 
             // Check for missing dependencies
             for (const depId of task.dependencies) {
-                if (!taskMap.has(depId)) {
+                const normalizedDepId = this.normalizeId(depId as unknown);
+                if (!taskMap.has(normalizedDepId)) {
                     errors.push({
-                        taskId: task.id,
-                        message: `Missing dependency: ${String(depId)}`,
+                        taskId,
+                        message: `Missing dependency: ${normalizedDepId}`,
                         severity: 'error',
                     });
                 }
@@ -162,7 +166,7 @@ export class LLMPlanner implements Planner {
             // Validate task structure
             if (!task.name || task.name.trim().length === 0) {
                 errors.push({
-                    taskId: task.id,
+                    taskId,
                     message: 'Task name is required',
                     severity: 'error',
                 });
@@ -363,6 +367,10 @@ Please provide a refined plan that addresses these issues. Return the complete u
         return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
     }
 
+    private normalizeId(value: unknown): string {
+        return typeof value === 'string' ? value : String(value);
+    }
+
     /**
      * Generate a unique ID
      */
@@ -384,7 +392,7 @@ Please provide a refined plan that addresses these issues. Return the complete u
             const prevTask = tasks[i - 1];
             if (task.dependencies.length === 0 && prevTask !== undefined) {
                 Object.assign(task, {
-                    dependencies: [prevTask.id],
+                    dependencies: [this.normalizeId(prevTask.id as unknown)],
                 });
             }
         }

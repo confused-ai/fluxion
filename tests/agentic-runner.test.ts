@@ -28,9 +28,9 @@ import type {
     AgenticLifecycleHooks,
     AgenticRunResult,
 } from '@confused-ai/agentic';
-import type { Message, ToolCall as LLMToolCall, GenerateResult } from '../src/providers/types.js';
+import type { GenerateOptions, GenerateResult, LLMProvider, Message, ToolCall as LLMToolCall } from '@confused-ai/core';
 import type { ToolRegistry, Tool, ToolResult } from '@confused-ai/tools';
-import type { GuardrailEngine, GuardrailContext, GuardrailViolation, HumanInTheLoopHooks } from '@confused-ai/guardrails';
+import type { GuardrailEngine, GuardrailContext, GuardrailResult, GuardrailViolation, HumanInTheLoopHooks } from '@confused-ai/guardrails';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -39,10 +39,14 @@ function makeToolCall(name: string, args: Record<string, unknown> = {}, id = `ca
 }
 
 type GenerateFn = (messages: Message[]) => GenerateResult;
+type MockLLM = Omit<LLMProvider, 'generateText'> & {
+    generateText: Mock<(messages: Message[], options?: GenerateOptions) => Promise<GenerateResult>>;
+    _callIdx: () => number;
+};
 
-function makeMockLLM(responses: GenerateFn | GenerateResult[]) {
+function makeMockLLM(responses: GenerateFn | GenerateResult[]): MockLLM {
     let callIdx = 0;
-    const generateText = vi.fn(async (messages: Message[]): Promise<GenerateResult> => {
+    const generateText = vi.fn(async (messages: Message[], _options?: GenerateOptions): Promise<GenerateResult> => {
         if (typeof responses === 'function') return responses(messages);
         const r = responses[callIdx % responses.length];
         callIdx++;
@@ -67,8 +71,12 @@ function makeTool(
         id: name,
         name,
         description: `Mock tool: ${name}`,
-        parameters: {} as Tool['parameters'],
-        permissions: { requiresConfirmation: false, allowedScopes: [] } as Tool['permissions'],
+        parameters: z.object({}) as unknown as Tool['parameters'],
+        permissions: {
+            allowNetwork: false,
+            allowFileSystem: false,
+            maxExecutionTimeMs: 1_000,
+        } as Tool['permissions'],
         category: 'utility' as Tool['category'],
         version: '1.0.0',
         execute: vi.fn(async (params: Record<string, unknown>): Promise<ToolResult> => {
@@ -77,7 +85,7 @@ function makeTool(
                 success: true,
                 data,
                 executionTimeMs: 0,
-                metadata: { toolId: name, toolName: name, startedAt: new Date().toISOString(), finishedAt: new Date().toISOString() },
+                metadata: { startTime: new Date(), endTime: new Date(), retries: 0 },
             };
         }),
     } as unknown as Tool;
@@ -99,8 +107,46 @@ function makeRegistry(tools: Tool[]): ToolRegistry {
 
 const NOOP_REGISTRY = makeRegistry([]);
 
+function asResponseModel(schema: z.ZodTypeAny): NonNullable<AgenticRunConfig['responseModel']> {
+    return schema as unknown as NonNullable<AgenticRunConfig['responseModel']>;
+}
+
+function isGuardrailViolation(value: unknown): value is GuardrailViolation {
+    return typeof value === 'object' && value !== null
+        && 'rule' in value
+        && 'message' in value
+        && 'severity' in value;
+}
+
+function makeBlockedGuardrailResult(violation: GuardrailViolation): GuardrailResult {
+    return {
+        passed: false,
+        rule: violation.rule,
+        message: violation.message,
+        details: violation,
+    };
+}
+
+function getGuardrailViolations(results: GuardrailResult[]): GuardrailViolation[] {
+    return results.flatMap((result) => {
+        if (result.passed) {
+            return [];
+        }
+
+        if (isGuardrailViolation(result.details)) {
+            return [result.details];
+        }
+
+        return [{
+            rule: result.rule,
+            message: result.message ?? 'Guardrail violation',
+            severity: 'error',
+        }];
+    });
+}
+
 function makeRunnerConfig(overrides: Partial<AgenticRunnerConfig> = {}): AgenticRunnerConfig {
-    const llm = overrides.llm ?? makeMockLLM([makeSimpleResult('Hello!')]);
+    const llm: AgenticRunnerConfig['llm'] = overrides.llm ?? makeMockLLM([makeSimpleResult('Hello!')]);
     return {
         llm,
         tools: NOOP_REGISTRY,
@@ -386,7 +432,7 @@ describe('AgenticRunner — lifecycle hooks', () => {
 
         expect(beforeRun).toHaveBeenCalledWith('original', expect.any(Object));
         // LLM should receive the modified prompt as the user message
-        const llmCalls = (llm as ReturnType<typeof makeMockLLM>).generateText.mock.calls;
+        const llmCalls = llm.generateText.mock.calls;
         const messages = llmCalls[0]?.[0] as Message[];
         const userMsg = messages.find(m => m.role === 'user');
         expect(typeof userMsg?.content === 'string' ? userMsg.content : '').toMatch(/MODIFIED/);
@@ -546,12 +592,10 @@ describe('AgenticRunner — guardrails', () => {
         const violation: GuardrailViolation = { rule: 'content-policy', message: 'Forbidden action', severity: 'error' } as GuardrailViolation;
 
         const guardrails: GuardrailEngine = {
-            checkToolCall: vi.fn(async () => [{ blocked: true, violation }]),
+            checkToolCall: vi.fn(async () => [makeBlockedGuardrailResult(violation)]),
             validateOutput: vi.fn(async () => []),
             checkAll: vi.fn(async () => []),
-            getViolations: vi.fn((results: Array<{ blocked: boolean; violation?: GuardrailViolation }>) =>
-                results.filter(r => r.blocked).map(r => r.violation).filter(Boolean) as GuardrailViolation[],
-            ),
+            getViolations: vi.fn(getGuardrailViolations),
         };
 
         const llm = makeMockLLM([
@@ -600,12 +644,10 @@ describe('AgenticRunner — guardrails', () => {
         const inputViolation: GuardrailViolation = { rule: 'policy', message: 'Input blocked', severity: 'error' } as GuardrailViolation;
 
         const guardrails: GuardrailEngine = {
-            checkToolCall: vi.fn(async () => [{ blocked: true, violation: inputViolation }]),
+            checkToolCall: vi.fn(async () => [makeBlockedGuardrailResult(inputViolation)]),
             validateOutput: vi.fn(async () => []),
             checkAll: vi.fn(async () => []),
-            getViolations: vi.fn((results: Array<{ blocked: boolean; violation?: GuardrailViolation }>) =>
-                results.filter(r => r.blocked).map(r => r.violation).filter(Boolean) as GuardrailViolation[],
-            ),
+            getViolations: vi.fn(getGuardrailViolations),
         };
 
         const onViolation = vi.fn(async () => {});
@@ -823,10 +865,10 @@ describe('AgenticRunner — system prompt', () => {
 describe('AgenticRunner — streaming', () => {
     it('uses streamText when onChunk hook is provided and llm.streamText exists', async () => {
         const chunks = ['Hello', ', ', 'world', '!'];
-        const streamText = vi.fn(async (messages: Message[], options: Record<string, unknown>) => {
+        const streamText = vi.fn(async (_messages: Message[], options?: GenerateOptions) => {
             // Simulate streaming by calling onChunk for each chunk
             for (const chunk of chunks) {
-                (options.onChunk as (delta: { type: string; text: string }) => void)({ type: 'text', text: chunk });
+                options?.onChunk?.(chunk);
             }
             return { text: 'Hello, world!', finishReason: 'stop' as const };
         });
@@ -923,7 +965,7 @@ describe('AgenticRunner — structured output', () => {
         const llm = makeMockLLM([makeSimpleResult('```json\n{"name":"Alice","score":42}\n```')]);
         const runner = new AgenticRunner(makeRunnerConfig({ llm }));
 
-        const result = await runner.run(makeRunConfig({ responseModel: schema }));
+        const result = await runner.run(makeRunConfig({ responseModel: asResponseModel(schema) }));
 
         expect(result.structuredOutput).toEqual({ name: 'Alice', score: 42 });
     });
@@ -933,7 +975,7 @@ describe('AgenticRunner — structured output', () => {
         const llm = makeMockLLM([makeSimpleResult('This is just plain text, no JSON.')]);
         const runner = new AgenticRunner(makeRunnerConfig({ llm }));
 
-        const result = await runner.run(makeRunConfig({ responseModel: schema }));
+        const result = await runner.run(makeRunConfig({ responseModel: asResponseModel(schema) }));
 
         expect(result.structuredOutput).toBeUndefined();
     });
@@ -942,9 +984,9 @@ describe('AgenticRunner — structured output', () => {
         const schema = z.object({ answer: z.string() });
         const llm = makeMockLLM([makeSimpleResult('{"answer":"42"}')]);
         const runner = new AgenticRunner(makeRunnerConfig({ llm }));
-        await runner.run(makeRunConfig({ responseModel: schema }));
+        await runner.run(makeRunConfig({ responseModel: asResponseModel(schema) }));
 
-        const messages = (llm as ReturnType<typeof makeMockLLM>).generateText.mock.calls[0]?.[0] as Message[];
+        const messages = llm.generateText.mock.calls[0]?.[0] as Message[];
         const systemMsg = messages.find(m => m.role === 'system');
         // System prompt should contain structured output directive
         expect(typeof systemMsg?.content === 'string' ? systemMsg.content : '').toMatch(/JSON|json|format|schema/i);
@@ -999,11 +1041,9 @@ describe('AgenticRunner — output guardrails', () => {
 
         const guardrails: GuardrailEngine = {
             checkToolCall: vi.fn(async () => []),   // input OK
-            validateOutput: vi.fn(async () => [{ blocked: true, violation: outputViolation }]),
+            validateOutput: vi.fn(async () => [makeBlockedGuardrailResult(outputViolation)]),
             checkAll: vi.fn(async () => []),
-            getViolations: vi.fn((results: Array<{ blocked: boolean; violation?: GuardrailViolation }>) =>
-                results.filter(r => r.blocked).map(r => r.violation).filter(Boolean) as GuardrailViolation[],
-            ),
+            getViolations: vi.fn(getGuardrailViolations),
         };
 
         const llm = makeMockLLM([
@@ -1029,11 +1069,9 @@ describe('AgenticRunner — output guardrails', () => {
 
         const guardrails2: GuardrailEngine = {
             checkToolCall: vi.fn(async () => []),
-            validateOutput: vi.fn(async () => [{ blocked: true, violation: outputViolation2 }]),
+            validateOutput: vi.fn(async () => [makeBlockedGuardrailResult(outputViolation2)]),
             checkAll: vi.fn(async () => []),
-            getViolations: vi.fn((results: Array<{ blocked: boolean; violation?: GuardrailViolation }>) =>
-                results.filter(r => r.blocked).map(r => r.violation).filter(Boolean) as GuardrailViolation[],
-            ),
+            getViolations: vi.fn(getGuardrailViolations),
         };
 
         const onViolation = vi.fn(async () => {});

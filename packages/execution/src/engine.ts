@@ -27,8 +27,10 @@ import {
     PlanExecutionResult,
     PlanExecutionStatus,
 } from '@confused-ai/planner';
-import type { EntityId } from '@confused-ai/core';
 import { EventEmitter } from 'events';
+
+type ExecutionId = string;
+type NodeId = string;
 
 /**
  * Default execution configuration
@@ -52,8 +54,8 @@ const DEFAULT_CONFIG: Required<ExecutionEngineConfig> = {
 export class ExecutionEngineImpl extends EventEmitter implements ExecutionEngine {
     private config: Required<ExecutionEngineConfig>;
     private executors: Map<string, TaskExecutor> = new Map();
-    private executions: Map<EntityId, ExecutionStatus> = new Map();
-    private runningExecutions: Map<EntityId, AbortController> = new Map();
+    private executions: Map<ExecutionId, ExecutionStatus> = new Map();
+    private runningExecutions: Map<ExecutionId, AbortController> = new Map();
 
     constructor(config: Partial<ExecutionEngineConfig> = {}) {
         super();
@@ -61,7 +63,10 @@ export class ExecutionEngineImpl extends EventEmitter implements ExecutionEngine
     }
 
     async execute(plan: Plan, options: ExecutionOptions = {}): Promise<PlanExecutionResult> {
-        const executionId = options.executionId ?? this.generateId();
+        const executionId = options.executionId === undefined
+            ? this.generateId()
+            : this.normalizeId(options.executionId as unknown);
+        const planId = this.normalizeId(plan.id as unknown);
         // timeoutMs is used for potential future timeout implementation
         void (options.timeoutMs ?? this.config.defaultTimeoutMs);
 
@@ -71,7 +76,7 @@ export class ExecutionEngineImpl extends EventEmitter implements ExecutionEngine
         // Initialize execution status
         const status: ExecutionStatus = {
             executionId,
-            planId: plan.id,
+            planId,
             state: ExecutionState.PENDING,
             progress: this.calculateProgress(graph),
             currentTasks: [],
@@ -87,7 +92,7 @@ export class ExecutionEngineImpl extends EventEmitter implements ExecutionEngine
         try {
             // Update state to running
             this.updateExecutionState(executionId, ExecutionState.RUNNING);
-            this.emitEvent('execution:start', executionId, { planId: plan.id });
+            this.emitEvent('execution:start', executionId, { planId });
 
             // Execute the plan
             const results = await this.executeGraph(
@@ -118,7 +123,7 @@ export class ExecutionEngineImpl extends EventEmitter implements ExecutionEngine
 
             const endTime = new Date();
             const result: PlanExecutionResult = {
-                planId: plan.id,
+                planId,
                 status: finalStatus,
                 taskResults: results,
                 startedAt: status.startedAt,
@@ -147,7 +152,7 @@ export class ExecutionEngineImpl extends EventEmitter implements ExecutionEngine
         }
     }
 
-    cancel(executionId: EntityId): Promise<boolean> {
+    cancel(executionId: ExecutionId): Promise<boolean> {
         const controller = this.runningExecutions.get(executionId);
         if (!controller) {
             return Promise.resolve(false);
@@ -160,7 +165,7 @@ export class ExecutionEngineImpl extends EventEmitter implements ExecutionEngine
         return Promise.resolve(true);
     }
 
-    getStatus(executionId: EntityId): ExecutionStatus | undefined {
+    getStatus(executionId: ExecutionId): ExecutionStatus | undefined {
         return this.executions.get(executionId);
     }
 
@@ -183,29 +188,34 @@ export class ExecutionEngineImpl extends EventEmitter implements ExecutionEngine
      * Build execution graph from plan
      */
     private buildExecutionGraph(plan: Plan): ExecutionGraph {
-        const nodes = new Map<EntityId, ExecutionNode>();
-        const readyQueue: EntityId[] = [];
+        const planId = this.normalizeId(plan.id as unknown);
+        const nodes = new Map<NodeId, ExecutionNode>();
+        const readyQueue: NodeId[] = [];
 
         // Create nodes for all tasks
         for (const task of plan.tasks) {
+            const taskId = this.normalizeId(task.id as unknown);
+            const dependencies = new Set(
+                task.dependencies.map((dependency) => this.normalizeId(dependency as unknown))
+            );
             const node: ExecutionNode = {
                 task,
                 status: ExecutionNodeStatus.PENDING,
-                dependencies: new Set(task.dependencies),
+                dependencies,
                 dependents: new Set(),
             };
-            nodes.set(task.id, node);
+            nodes.set(taskId, node);
 
             // Add to ready queue if no dependencies
-            if (task.dependencies.length === 0) {
-                readyQueue.push(task.id);
+            if (dependencies.size === 0) {
+                readyQueue.push(taskId);
             }
         }
 
         // Build reverse dependency map (dependents)
         for (const [id, node] of nodes) {
             for (const depId of node.dependencies) {
-                const depNode = nodes.get(depId);
+                const depNode = nodes.get(this.normalizeId(depId));
                 if (depNode) {
                     depNode.dependents.add(id);
                 }
@@ -213,7 +223,7 @@ export class ExecutionEngineImpl extends EventEmitter implements ExecutionEngine
         }
 
         return {
-            planId: plan.id,
+            planId,
             nodes,
             readyQueue,
             completedCount: 0,
@@ -227,14 +237,14 @@ export class ExecutionEngineImpl extends EventEmitter implements ExecutionEngine
      */
     private async executeGraph(
         graph: ExecutionGraph,
-        executionId: EntityId,
+        executionId: ExecutionId,
         abortSignal: AbortSignal,
         options: ExecutionOptions
-    ): Promise<Map<EntityId, TaskResult>> {
-        const results = new Map<EntityId, TaskResult>();
+    ): Promise<Map<NodeId, TaskResult>> {
+        const results = new Map<NodeId, TaskResult>();
         const executing = new Set<Promise<void>>();
 
-        const processNode = async (nodeId: EntityId): Promise<void> => {
+        const processNode = async (nodeId: NodeId): Promise<void> => {
             const node = graph.nodes.get(nodeId);
             if (!node || abortSignal.aborted) {
                 return;
@@ -242,7 +252,7 @@ export class ExecutionEngineImpl extends EventEmitter implements ExecutionEngine
 
             // Check if all dependencies are satisfied
             for (const depId of node.dependencies) {
-                const depResult = results.get(depId);
+                const depResult = results.get(this.normalizeId(depId));
                 if (!depResult || depResult.status === TaskStatus.FAILED) {
                     // Skip this task if dependency failed
                     const skipResult: TaskResult = {
@@ -278,7 +288,7 @@ export class ExecutionEngineImpl extends EventEmitter implements ExecutionEngine
                 const context: ExecutionContext = {
                     executionId,
                     taskId: nodeId,
-                    planId: graph.planId,
+                    planId: this.normalizeId(graph.planId as unknown),
                     inputs: this.collectInputs(node.task, results),
                     sharedState: new Map(),
                     metadata: {
@@ -343,7 +353,8 @@ export class ExecutionEngineImpl extends EventEmitter implements ExecutionEngine
                 graph.readyQueue.length > 0 &&
                 executing.size < this.config.maxConcurrency
             ) {
-                const nodeId = graph.readyQueue.shift();
+                const rawNodeId: unknown = graph.readyQueue.shift();
+                const nodeId = rawNodeId === undefined ? undefined : this.normalizeId(rawNodeId);
                 if (nodeId === undefined) break;
                 const promise = processNode(nodeId).then(() => {
                     executing.delete(promise);
@@ -399,14 +410,15 @@ export class ExecutionEngineImpl extends EventEmitter implements ExecutionEngine
      */
     private collectInputs(
         task: Task,
-        results: Map<EntityId, TaskResult>
-    ): Map<EntityId, unknown> {
-        const inputs = new Map<EntityId, unknown>();
+        results: Map<NodeId, TaskResult>
+    ): Map<NodeId, unknown> {
+        const inputs = new Map<NodeId, unknown>();
 
         for (const depId of task.dependencies) {
-            const result = results.get(depId);
+            const normalizedDepId = this.normalizeId(depId as unknown);
+            const result = results.get(normalizedDepId);
             if (result?.output !== undefined) {
-                inputs.set(depId, result.output);
+                inputs.set(normalizedDepId, result.output);
             }
         }
 
@@ -418,7 +430,7 @@ export class ExecutionEngineImpl extends EventEmitter implements ExecutionEngine
      */
     private updateNodeStatus(
         graph: ExecutionGraph,
-        nodeId: EntityId,
+        nodeId: NodeId,
         status: ExecutionNodeStatus
     ): void {
         const node = graph.nodes.get(nodeId) as MutableExecutionNode | undefined;
@@ -467,7 +479,7 @@ export class ExecutionEngineImpl extends EventEmitter implements ExecutionEngine
     /**
      * Update execution state
      */
-    private updateExecutionState(executionId: EntityId, state: ExecutionState): void {
+    private updateExecutionState(executionId: ExecutionId, state: ExecutionState): void {
         const status = this.executions.get(executionId);
         if (status) {
             this.executions.set(executionId, { ...status, state });
@@ -479,7 +491,7 @@ export class ExecutionEngineImpl extends EventEmitter implements ExecutionEngine
      */
     private emitEvent(
         type: ExecutionEventType,
-        executionId: EntityId,
+        executionId: ExecutionId,
         data: unknown
     ): void {
         const event: ExecutionEvent = {
@@ -495,8 +507,12 @@ export class ExecutionEngineImpl extends EventEmitter implements ExecutionEngine
     /**
      * Generate a unique ID
      */
-    private generateId(): EntityId {
+    private generateId(): ExecutionId {
         return `exec-${String(Date.now())}-${Math.random().toString(36).substring(2, 11)}`;
+    }
+
+    private normalizeId(value: unknown): string {
+        return typeof value === 'string' ? value : String(value);
     }
 }
 
