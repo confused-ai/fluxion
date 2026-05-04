@@ -1,6 +1,6 @@
 {
     "name": "confused-ai",
-    "version": "1.1.7",
+    "version": "1.0.0",
     "description": "TypeScript framework for building production-grade AI agents, teams, and services",
     "type": "module",
     "packageManager": "bun@1.3.11",
@@ -415,33 +415,59 @@
     },
     "peerDependencies": {
         "@aws-sdk/client-bedrock-runtime": "^3.0.0",
-        "@anthropic-ai/sdk":              ">=0.30.0",
-        "@google/generative-ai":           ">=0.5.0",
-        "@ffmpeg-installer/ffmpeg":        "^1.1.0",
-        "better-sqlite3":                  "^11.0.0",
-        "duck-duck-scrape":                ">=2.0.0",
-        "fluent-ffmpeg":                   "^2.1.3",
-        "ioredis":                         ">=5.0.0",
-        "ollama":                          ">=0.5.0",
-        "openai":                          "^6.17.0",
-        "pexels":                          "^1.4.0",
-        "playwright":                      "^1.0.0",
-        "yahoo-finance2":                  "^2.11.3"
+        "@anthropic-ai/sdk": ">=0.30.0",
+        "@google/generative-ai": ">=0.5.0",
+        "@ffmpeg-installer/ffmpeg": "^1.1.0",
+        "better-sqlite3": "^11.0.0",
+        "duck-duck-scrape": ">=2.0.0",
+        "fluent-ffmpeg": "^2.1.3",
+        "ioredis": ">=5.0.0",
+        "ollama": ">=0.5.0",
+        "openai": "^6.17.0",
+        "pexels": "^1.4.0",
+        "playwright": "^1.0.0",
+        "yahoo-finance2": "^2.11.3"
     },
     "peerDependenciesMeta": {
-        "@aws-sdk/client-bedrock-runtime": { "optional": true },
-        "@anthropic-ai/sdk":               { "optional": true },
-        "@google/generative-ai":            { "optional": true },
-        "@ffmpeg-installer/ffmpeg":         { "optional": true },
-        "better-sqlite3":                  { "optional": true },
-        "duck-duck-scrape":                { "optional": true },
-        "fluent-ffmpeg":                   { "optional": true },
-        "ioredis":                         { "optional": true },
-        "ollama":                          { "optional": true },
-        "openai":                          { "optional": true },
-        "pexels":                          { "optional": true },
-        "playwright":                      { "optional": true },
-        "yahoo-finance2":                  { "optional": true }
+        "@aws-sdk/client-bedrock-runtime": {
+            "optional": true
+        },
+        "@anthropic-ai/sdk": {
+            "optional": true
+        },
+        "@google/generative-ai": {
+            "optional": true
+        },
+        "@ffmpeg-installer/ffmpeg": {
+            "optional": true
+        },
+        "better-sqlite3": {
+            "optional": true
+        },
+        "duck-duck-scrape": {
+            "optional": true
+        },
+        "fluent-ffmpeg": {
+            "optional": true
+        },
+        "ioredis": {
+            "optional": true
+        },
+        "ollama": {
+            "optional": true
+        },
+        "openai": {
+            "optional": true
+        },
+        "pexels": {
+            "optional": true
+        },
+        "playwright": {
+            "optional": true
+        },
+        "yahoo-finance2": {
+            "optional": true
+        }
     },
     "engines": {
         "node": ">=18.0.0"
