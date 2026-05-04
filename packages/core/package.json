@@ -72,11 +72,13 @@
     "zod": ">=3.22.0"
   },
   "peerDependencies": {
-    "@confused-ai/guard": "workspace:*",
+    "@confused-ai/db":      "workspace:*",
+    "@confused-ai/guard":   "workspace:*",
     "@confused-ai/observe": "workspace:*"
   },
   "peerDependenciesMeta": {
-    "@confused-ai/guard": { "optional": true },
+    "@confused-ai/db":      { "optional": true },
+    "@confused-ai/guard":   { "optional": true },
     "@confused-ai/observe": { "optional": true }
   },
   "devDependencies": {

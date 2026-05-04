@@ -7,6 +7,26 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [1.1.7] — 2026-05-04
+
+### Added
+
+- **`DbScheduleStore`** (`packages/scheduler`) — bridges `ScheduleManager` with any `AgentDb` backend. Pass any `AgentDb` instance (SQLite, Postgres, MySQL, MongoDB, Redis, DynamoDB, Turso, JSON) as the `ScheduleStore` without writing custom persistence code. Exported from `confused-ai/scheduler`.
+- **DB health in `/health` endpoint** — `CreateHttpServiceOptions` now accepts `db?: AgentDb`. When set, `GET /health` and `GET /v1/health` run a live `db.health()` probe and return HTTP 503 with `{ status: 'degraded' }` if the database is unreachable.
+
+### Fixed
+
+- **`@confused-ai/db` — `uuid()` not cryptographically secure** — all 8 backends now use `crypto.randomUUID()` via a shared `packages/db/src/utils.ts` module (was `Math.random()`-based).
+- **`@confused-ai/db` — `init()` race condition** — concurrent callers no longer double-initialize the connection pool. Async backends (Postgres, MongoDB, MySQL, DynamoDB, Turso) now guard with a shared `_initPromise`.
+- **`PostgresAgentDb`** — `getKnowledgeItems()`, `getTrace()`, and `getTraces()` now re-serialize JSONB `content` / `metadata` columns back to strings. The `pg` driver returns JSONB as parsed objects, not strings; this caused type contract violations for consumers expecting `string | null`.
+- **`PostgresAgentDb`** — `close()` method was accidentally removed during a refactor; restored.
+- **`MongoAgentDb`** — all `findOne()` and `find()` calls now include `{ projection: { _id: 0 } }`, preventing MongoDB's internal `_id` ObjectId field from leaking into `SessionRow`, `MemoryRow`, and other row types.
+- **`DynamoDbAgentDb`** — constructor now calls `validateTableNames()` to catch misconfigured table names at startup rather than at first use.
+- **`TursoAgentDb`** — single-row casts (`LibSqlRow → SessionRow` etc.) now use the `as unknown as T` double-cast pattern, fixing TypeScript strict-mode errors.
+- **`DbSessionStore`** (`packages/session`) — `now()` helper now returns Unix epoch **seconds** (`Math.floor(Date.now() / 1000)`) matching the `AgentDb` timestamp contract. Was returning milliseconds, causing `created_at`/`updated_at` to be stored 1000× too large.
+
+---
+
 ## [1.1.6] — 2026-05-04
 
 ### Changed

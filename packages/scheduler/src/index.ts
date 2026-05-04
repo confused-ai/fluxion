@@ -14,3 +14,4 @@ export type {
     ScheduleStore,
     ScheduleRunStore,
 } from './manager.js';
+export { DbScheduleStore } from './db-schedule-store.js';

@@ -35,12 +35,14 @@
     "@confused-ai/core": "workspace:*"
   },
   "peerDependencies": {
-    "better-sqlite3": ">=11.0.0",
-    "ioredis":        ">=5.0.0"
+    "better-sqlite3":  ">=11.0.0",
+    "ioredis":         ">=5.0.0",
+    "@confused-ai/db": "workspace:*"
   },
   "peerDependenciesMeta": {
-    "better-sqlite3": { "optional": true },
-    "ioredis":        { "optional": true }
+    "better-sqlite3":  { "optional": true },
+    "ioredis":         { "optional": true },
+    "@confused-ai/db": { "optional": true }
   },
   "devDependencies": {
     "tsup": "^8.4.0",

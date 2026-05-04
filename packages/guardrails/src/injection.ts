@@ -150,7 +150,7 @@ export function detectPromptInjection(
 ): PromptInjectionDetectionResult {
     const { threshold = 0.6 } = opts;
     if (!input || !input.trim()) {
-        return { detected: false, score: 0, signals: [] };
+        return { detected: false, isInjection: false, score: 0, signals: [] };
     }
 
     const normalized = normalizeText(input);

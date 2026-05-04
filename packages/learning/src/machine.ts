@@ -31,11 +31,21 @@ import type {
     SessionContextStore,
     LearnedKnowledgeStore,
     EntityMemoryStore,
+    DecisionLogStore,
     LearningRecallOptions,
     LearningProcessOptions,
     LearningToolOptions,
     LearningTool,
 } from './types.js';
+import type { Curator } from './curator.js';
+import type { AgentDb } from '@confused-ai/db';
+import {
+    DbUserMemoryStore,
+    DbSessionContextStore,
+    DbLearnedKnowledgeStore,
+    DbEntityMemoryStore,
+    DbDecisionLogStore,
+} from './db-learning-stores.js';
 
 // ── Configuration ─────────────────────────────────────────────────────────────
 
@@ -50,10 +60,24 @@ export interface LearningMachineConfig {
     entityMemory?: EntityMemoryStore;
     /** Store for reusable learned knowledge / insights */
     learnedKnowledge?: LearnedKnowledgeStore;
+    /** Store for agent decision logs */
+    decisionLog?: DecisionLogStore;
+    /** Curator for pruning and deduplicating memories */
+    curator?: Curator;
     /** Default namespace for entity and knowledge stores */
     namespace?: string;
     /** Enable debug logging */
     debug?: boolean;
+    /**
+     * Optional AgentDb backend. When provided, any store that is not explicitly
+     * supplied will be auto-created using the corresponding `Db*Store` adapter.
+     *
+     * ```ts
+     * const machine = new LearningMachine({ db: new SqliteAgentDb({ path: './agent.db' }) });
+     * // All five stores are now persistent automatically.
+     * ```
+     */
+    db?: AgentDb;
 }
 
 // ── Recall Result ─────────────────────────────────────────────────────────────
@@ -75,15 +99,20 @@ export class LearningMachine {
     readonly sessionContext?: SessionContextStore;
     readonly entityMemory?: EntityMemoryStore;
     readonly learnedKnowledge?: LearnedKnowledgeStore;
+    readonly decisionLog?: DecisionLogStore;
+    readonly curator?: Curator;
     readonly namespace: string;
     private readonly debug: boolean;
 
     constructor(config: LearningMachineConfig = {}) {
+        const { db } = config;
         this.userProfile = config.userProfile;
-        this.userMemory = config.userMemory;
-        this.sessionContext = config.sessionContext;
-        this.entityMemory = config.entityMemory;
-        this.learnedKnowledge = config.learnedKnowledge;
+        this.userMemory = config.userMemory ?? (db ? new DbUserMemoryStore(db) : undefined);
+        this.sessionContext = config.sessionContext ?? (db ? new DbSessionContextStore(db) : undefined);
+        this.entityMemory = config.entityMemory ?? (db ? new DbEntityMemoryStore(db) : undefined);
+        this.learnedKnowledge = config.learnedKnowledge ?? (db ? new DbLearnedKnowledgeStore(db) : undefined);
+        this.decisionLog = config.decisionLog ?? (db ? new DbDecisionLogStore(db) : undefined);
+        this.curator = config.curator;
         this.namespace = config.namespace ?? 'global';
         this.debug = config.debug ?? false;
     }
@@ -196,6 +225,11 @@ export class LearningMachine {
             tools.push(this._makeSearchKnowledgeTool(ns));
         }
 
+        if (this.decisionLog) {
+            tools.push(this._makeLogDecisionTool(opts.agentId, opts.sessionId));
+            tools.push(this._makeSearchDecisionsTool(opts.agentId));
+        }
+
         return tools;
     }
 
@@ -208,6 +242,8 @@ export class LearningMachine {
             sessionContext:   !!this.sessionContext,
             entityMemory:     !!this.entityMemory,
             learnedKnowledge: !!this.learnedKnowledge,
+            decisionLog:      !!this.decisionLog,
+            curator:          !!this.curator,
             namespace:        this.namespace,
         };
     }
@@ -346,6 +382,28 @@ export class LearningMachine {
             const results = await store.search(String(query), namespace);
             if (!results.length) return 'No relevant learnings found';
             return results.map(k => `[${k.title}] ${k.learning}`).join('\n');
+        };
+    }
+
+    private _makeLogDecisionTool(agentId?: string, sessionId?: string): LearningTool {
+        const store = this.decisionLog!;
+        return async function logDecision(decision: unknown, reasoning?: unknown, context?: unknown): Promise<string> {
+            const entry = await store.add({
+                decision: String(decision),
+                reasoning: reasoning ? String(reasoning) : undefined,
+                context: context ? String(context) : undefined,
+                agentId, sessionId,
+            });
+            return `Decision logged (id=${entry.id})`;
+        };
+    }
+
+    private _makeSearchDecisionsTool(agentId?: string): LearningTool {
+        const store = this.decisionLog!;
+        return async function searchDecisions(query: unknown): Promise<string> {
+            const results = await store.search(String(query), agentId);
+            if (!results.length) return 'No relevant decisions found';
+            return results.map((d) => `[${d.createdAt ?? ''}] ${d.decision}${d.reasoning ? ` — ${d.reasoning}` : ''}`).join('\n');
         };
     }
 

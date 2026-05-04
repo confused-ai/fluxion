@@ -177,7 +177,50 @@ await scheduler.create({
 
 ## Production persistence
 
-Swap the in-memory stores for persistent backends by implementing `ScheduleStore` and `ScheduleRunStore`:
+### `DbScheduleStore` — persist to any `AgentDb` backend
+
+`DbScheduleStore` bridges `ScheduleManager` with the `@confused-ai/db` unified storage layer. Plug in any supported backend (SQLite, Postgres, MySQL, MongoDB, Redis, DynamoDB, Turso, JSON) with zero custom glue code:
+
+```ts
+import { ScheduleManager, DbScheduleStore } from 'confused-ai/scheduler';
+import { SqliteAgentDb } from '@confused-ai/db';
+
+const db        = new SqliteAgentDb({ path: './agent.db' });
+const store     = new DbScheduleStore(db);
+const scheduler = new ScheduleManager({ store });
+
+// All CRUD goes to agent.db's agent_schedules table — survives process restarts
+await scheduler.create({
+  name:     'Nightly report',
+  cronExpr: '0 2 * * *',
+  endpoint: 'nightly-report',
+  enabled:  true,
+});
+
+scheduler.start();
+```
+
+Swap the db instance to switch backends:
+
+```ts
+import { PostgresAgentDb, MongoAgentDb } from '@confused-ai/db';
+
+// Postgres
+const store = new DbScheduleStore(
+  new PostgresAgentDb({ connectionString: process.env.DATABASE_URL! })
+);
+
+// MongoDB
+const store = new DbScheduleStore(
+  new MongoAgentDb({ uri: process.env.MONGO_URI!, dbName: 'myapp' })
+);
+```
+
+`DbScheduleStore` stores HTTP-only fields (`endpoint`, `method`, `payload`, `timezone`, `maxRetries`, `retryDelaySeconds`) inside the row's `metadata` JSON column since the `agent_schedules` table is backend-agnostic.
+
+### Custom `ScheduleStore`
+
+If you need a fully custom store, implement `ScheduleStore` directly:
 
 ```ts
 import type { ScheduleStore, ScheduleRunStore } from 'confused-ai';

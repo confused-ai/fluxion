@@ -24,8 +24,8 @@
   "sideEffects": false,
   "scripts": { "build": "tsup", "typecheck": "tsc --noEmit", "test": "vitest run" },
   "dependencies": { "@confused-ai/contracts": "workspace:*", "@confused-ai/core": "workspace:*" },
-  "peerDependencies": { "openai": ">=4.0.0" },
-  "peerDependenciesMeta": { "openai": { "optional": true } },
+  "peerDependencies": { "openai": ">=4.0.0", "@confused-ai/db": "workspace:*" },
+  "peerDependenciesMeta": { "openai": { "optional": true }, "@confused-ai/db": { "optional": true } },
   "devDependencies": { "tsup": "^8.4.0", "typescript": "^5.9.3", "vitest": "^4.0.18" },
   "license": "MIT"
 }

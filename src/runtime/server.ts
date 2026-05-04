@@ -84,6 +84,7 @@ export function createHttpService(
     const cors = options.cors;
     const maxBodyBytes = options.maxBodyBytes ?? 1_048_576; // 1 MB default
     const authMiddleware = options.auth ? createAuthMiddleware(options.auth) : null;
+    const agentDb = options.db ?? null;
 
     // Idempotency store — defaults to in-memory if not provided
     const idempotencyOpts = options.idempotency;
@@ -202,14 +203,21 @@ export function createHttpService(
 
         try {
             if (method === 'GET' && (path === '/health' || path === '/v1/health')) {
-                sendJson(
-                    res,
-                    200,
-                    { status: 'ok', service: 'confused-ai', time: new Date().toISOString() },
-                    cors,
-                    rid
-                );
-                pushAudit(200, { id: rid });
+                const healthBody: Record<string, unknown> = {
+                    status: 'ok',
+                    service: 'confused-ai',
+                    time: new Date().toISOString(),
+                };
+                if (agentDb) {
+                    const dbHealth = await agentDb
+                        .health()
+                        .catch((e: unknown) => ({ ok: false, latencyMs: 0, error: String(e) }));
+                    healthBody['db'] = dbHealth;
+                    if (!dbHealth.ok) healthBody['status'] = 'degraded';
+                }
+                const httpStatus = healthBody['status'] === 'degraded' ? 503 : 200;
+                sendJson(res, httpStatus, healthBody, cors, rid);
+                pushAudit(httpStatus, { id: rid });
                 return;
             }
 

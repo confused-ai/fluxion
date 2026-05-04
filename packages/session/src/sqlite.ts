@@ -87,16 +87,19 @@ export function createSqliteStore(opts: SqliteSessionStoreOptions = {}): Session
     },
 
     async create(data) {
-      const id  = crypto.randomUUID();
+      const id      = typeof data === 'string' ? data : crypto.randomUUID();
+      const agentId = typeof data === 'string' ? 'unknown' : data.agentId;
+      const userId  = typeof data === 'string' ? undefined  : data.userId;
+      const msgs    = typeof data === 'string' ? []          : (data.messages ?? []);
       const now = Date.now();
-      stmtInsert.run(id, data.agentId, data.userId ?? null, JSON.stringify(data.messages ?? []), now, now);
+      stmtInsert.run(id, agentId, userId ?? null, JSON.stringify(msgs), now, now);
       return {
         id,
-        agentId: data.agentId,
-        messages: data.messages ?? [],
+        agentId,
+        messages: msgs,
         createdAt: now,
         updatedAt: now,
-        ...(data.userId !== undefined && { userId: data.userId }),
+        ...(userId !== undefined && { userId }),
       };
     },
 
@@ -107,6 +110,14 @@ export function createSqliteStore(opts: SqliteSessionStoreOptions = {}): Session
     async getMessages(id) {
       const row = stmtGet.get(id);
       return row ? (JSON.parse(row.messages) as SessionMessage[]) : [];
+    },
+
+    async appendMessage(id, message) {
+      const row = stmtGet.get(id);
+      if (!row) return;
+      const messages = JSON.parse(row.messages) as SessionMessage[];
+      messages.push(message);
+      stmtUpdate.run(JSON.stringify(messages), Date.now(), id);
     },
 
     async delete(id) {

@@ -84,15 +84,18 @@ export function createRedisStore(opts: RedisSessionStoreOptions = {}): SessionSt
     },
 
     async create(data) {
-      const id      = crypto.randomUUID();
+      const id      = typeof data === 'string' ? data : crypto.randomUUID();
+      const agentId = typeof data === 'string' ? 'unknown' : data.agentId;
+      const userId  = typeof data === 'string' ? undefined  : data.userId;
+      const msgs    = typeof data === 'string' ? []          : (data.messages ?? []);
       const now     = Date.now();
       const session: SessionData = {
         id,
-        agentId:   data.agentId,
-        messages:  data.messages ?? [],
+        agentId,
+        messages:  msgs,
         createdAt: now,
         updatedAt: now,
-        ...(data.userId !== undefined && { userId: data.userId }),
+        ...(userId !== undefined && { userId }),
       };
       await client.setex(key(id), ttl, JSON.stringify(session));
       return session;
@@ -108,6 +111,17 @@ export function createRedisStore(opts: RedisSessionStoreOptions = {}): SessionSt
     async getMessages(id) {
       const session = await this.get(id);
       return [...(session?.messages ?? [])];
+    },
+
+    async appendMessage(id, message) {
+      const session = await this.get(id);
+      if (!session) return;
+      const updated: SessionData = {
+        ...session,
+        messages: [...session.messages, message],
+        updatedAt: Date.now(),
+      };
+      await client.setex(key(id), ttl, JSON.stringify(updated));
     },
 
     async delete(id) {

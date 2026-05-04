@@ -34,11 +34,13 @@
   },
   "peerDependencies": {
     "@pinecone-database/pinecone": ">=3.0.0",
-    "pg": ">=8.0.0"
+    "pg":                          ">=8.0.0",
+    "@confused-ai/db":             "workspace:*"
   },
   "peerDependenciesMeta": {
     "@pinecone-database/pinecone": { "optional": true },
-    "pg": { "optional": true }
+    "pg":                          { "optional": true },
+    "@confused-ai/db":             { "optional": true }
   },
   "devDependencies": {
     "tsup": "^8.0.0",

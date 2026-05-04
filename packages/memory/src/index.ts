@@ -22,3 +22,7 @@ export type {
     QdrantVectorStoreConfig,
     PgVectorStoreConfig,
 } from './vector-adapters.js';
+
+// ── AgentDb-backed store ────────────────────────────────────────────────────
+export { DbMemoryStore, createDbMemoryStore } from './db-store.js';
+export type { DbMemoryStoreOptions } from './db-store.js';

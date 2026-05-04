@@ -15,6 +15,9 @@
 export { createAgent }         from './agent.js';
 export type { CreateAgentOptions, SessionStore } from './agent.js';
 
+// ── Database (AgentDb re-exported so users import from one place) ─────────────
+export type { AgentDb } from '@confused-ai/db';
+
 // ── Registry ──────────────────────────────────────────────────────────────────
 export { MapToolRegistry, createToolRegistry } from './tool-registry.js';
 

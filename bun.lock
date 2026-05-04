@@ -197,12 +197,37 @@
         "vitest": "^4.0.18",
       },
       "peerDependencies": {
+        "@confused-ai/db": "workspace:*",
         "@confused-ai/guard": "workspace:*",
         "@confused-ai/observe": "workspace:*",
       },
       "optionalPeers": [
+        "@confused-ai/db",
         "@confused-ai/guard",
         "@confused-ai/observe",
+      ],
+    },
+    "packages/db": {
+      "name": "@confused-ai/db",
+      "version": "0.1.0",
+      "devDependencies": {
+        "@types/better-sqlite3": "^7.6.0",
+        "@types/pg": "^8.0.0",
+        "tsup": "^8.4.0",
+        "typescript": "^5.9.3",
+        "vitest": "^4.0.18",
+      },
+      "peerDependencies": {
+        "better-sqlite3": ">=11.0.0",
+        "ioredis": ">=5.0.0",
+        "mongodb": ">=6.0.0",
+        "pg": ">=8.0.0",
+      },
+      "optionalPeers": [
+        "better-sqlite3",
+        "ioredis",
+        "mongodb",
+        "pg",
       ],
     },
     "packages/eval": {
@@ -406,6 +431,23 @@
         "typescript": "^5.0.0",
         "vitest": "^3.2.0",
       },
+    },
+    "packages/playground": {
+      "name": "@confused-ai/playground",
+      "version": "0.1.0",
+      "dependencies": {
+        "@confused-ai/contracts": "workspace:*",
+      },
+      "devDependencies": {
+        "tsup": "^8.0.2",
+        "typescript": "^5.4.5",
+      },
+      "peerDependencies": {
+        "@confused-ai/agentic": "workspace:*",
+      },
+      "optionalPeers": [
+        "@confused-ai/agentic",
+      ],
     },
     "packages/plugins": {
       "name": "@confused-ai/plugins",
@@ -761,6 +803,8 @@
 
     "@confused-ai/core": ["@confused-ai/core@workspace:packages/core"],
 
+    "@confused-ai/db": ["@confused-ai/db@workspace:packages/db"],
+
     "@confused-ai/eval": ["@confused-ai/eval@workspace:packages/eval"],
 
     "@confused-ai/execution": ["@confused-ai/execution@workspace:packages/execution"],
@@ -784,6 +828,8 @@
     "@confused-ai/orchestration": ["@confused-ai/orchestration@workspace:packages/orchestration"],
 
     "@confused-ai/planner": ["@confused-ai/planner@workspace:packages/planner"],
+
+    "@confused-ai/playground": ["@confused-ai/playground@workspace:packages/playground"],
 
     "@confused-ai/plugins": ["@confused-ai/plugins@workspace:packages/plugins"],
 
@@ -1142,6 +1188,8 @@
     "@types/mdurl": ["@types/mdurl@2.0.0", "", {}, "sha512-RGdgjQUZba5p6QEFAVx2OGb8rQDL/cPRG7GiedRzMcJ1tYnUANBncjbSB1NRGwbvjcPeikRABz2nshyPk1bhWg=="],
 
     "@types/node": ["@types/node@25.1.0", "", { "dependencies": { "undici-types": "~7.16.0" } }, "sha512-t7frlewr6+cbx+9Ohpl0NOTKXZNV9xHRmNOvql47BFJKcEG1CxtxlPEEe+gR9uhVWM4DwhnvTF110mIL4yP9RA=="],
+
+    "@types/pg": ["@types/pg@8.20.0", "", { "dependencies": { "@types/node": "*", "pg-protocol": "*", "pg-types": "^2.2.0" } }, "sha512-bEPFOaMAHTEP1EzpvHTbmwR8UsFyHSKsRisLIHVMXnpNefSbGA1bD6CVy+qKjGSqmZqNqBDV2azOBo8TgkcVow=="],
 
     "@types/tough-cookie": ["@types/tough-cookie@4.0.5", "", {}, "sha512-/Ad8+nIOV7Rl++6f1BdKxFSMgmoqEoYbHRpPcx3JEfv8VRsQe9Z4mCXeJBzxs7mbHY/XOZZuXlRNfhpVPbs6ZA=="],
 
@@ -1599,6 +1647,12 @@
 
     "pexels": ["pexels@1.4.0", "", { "dependencies": { "isomorphic-fetch": "^3.0.0" } }, "sha512-akpLySokCtw9JHGx7yMavOIAHGVP5721rLUONR/cFKjWkLjUXsHrJ5jndMKss9mx7AEMZRXs7loxEb+vLJf6kA=="],
 
+    "pg-int8": ["pg-int8@1.0.1", "", {}, "sha512-WCtabS6t3c8SkpDBUlb1kjOs7l66xsGdKpIPZsg4wR+B3+u9UAum2odSsF9tnvxg80h4ZxLWMy4pRjOsFIqQpw=="],
+
+    "pg-protocol": ["pg-protocol@1.13.0", "", {}, "sha512-zzdvXfS6v89r6v7OcFCHfHlyG/wvry1ALxZo4LqgUoy7W9xhBDMaqOuMiF3qEV45VqsN6rdlcehHrfDtlCPc8w=="],
+
+    "pg-types": ["pg-types@2.2.0", "", { "dependencies": { "pg-int8": "1.0.1", "postgres-array": "~2.0.0", "postgres-bytea": "~1.0.0", "postgres-date": "~1.0.4", "postgres-interval": "^1.1.0" } }, "sha512-qTAAlrEsl8s4OiEQY69wDvcMIdQN6wdz5ojQiOy6YRMuynxenON0O5oCpJI6lshc6scgAY8qvJ2On/p+CXY0GA=="],
+
     "picocolors": ["picocolors@1.1.1", "", {}, "sha512-xceH2snhtb5M9liqDsmEw56le376mTZkEX/jEb/RxNFyegNul7eNslCXP9FDj/Lcu0X8KEyMceP2ntpaHrDEVA=="],
 
     "picomatch": ["picomatch@4.0.3", "", {}, "sha512-5gTmgEY/sqK6gFXLIsQNH19lWb4ebPDLA4SdLP7dsWkIXHWlG66oPuVvXSGFPppYZz8ZDZq0dYYrbHfBCVUb1Q=="],
@@ -1614,6 +1668,14 @@
     "postcss": ["postcss@8.5.6", "", { "dependencies": { "nanoid": "^3.3.11", "picocolors": "^1.1.1", "source-map-js": "^1.2.1" } }, "sha512-3Ybi1tAuwAP9s0r1UQ2J4n5Y0G05bJkpUIO0/bI9MhwmD70S5aTWbXGBwxHrelT+XM1k6dM0pk+SwNkpTRN7Pg=="],
 
     "postcss-load-config": ["postcss-load-config@6.0.1", "", { "dependencies": { "lilconfig": "^3.1.1" }, "peerDependencies": { "jiti": ">=1.21.0", "postcss": ">=8.0.9", "tsx": "^4.8.1", "yaml": "^2.4.2" }, "optionalPeers": ["jiti", "postcss", "tsx", "yaml"] }, "sha512-oPtTM4oerL+UXmx+93ytZVN82RrlY/wPUV8IeDxFrzIjXOLF1pN+EmKPLbubvKHT2HC20xXsCAH2Z+CKV6Oz/g=="],
+
+    "postgres-array": ["postgres-array@2.0.0", "", {}, "sha512-VpZrUqU5A69eQyW2c5CA1jtLecCsN2U/bD6VilrFDWq5+5UIEVO7nazS3TEcHf1zuPYO/sqGvUvW62g86RXZuA=="],
+
+    "postgres-bytea": ["postgres-bytea@1.0.1", "", {}, "sha512-5+5HqXnsZPE65IJZSMkZtURARZelel2oXUEO8rH83VS/hxH5vv1uHquPg5wZs8yMAfdv971IU+kcPUczi7NVBQ=="],
+
+    "postgres-date": ["postgres-date@1.0.7", "", {}, "sha512-suDmjLVQg78nMK2UZ454hAG+OAW+HQPZ6n++TNDUX+L0+uUlLywnoxJKDou51Zm+zTCjrCl0Nq6J9C5hP9vK/Q=="],
+
+    "postgres-interval": ["postgres-interval@1.2.0", "", { "dependencies": { "xtend": "^4.0.0" } }, "sha512-9ZhXKM/rw350N1ovuWHbGxnGh/SNJ4cnxHiM0rxE4VN41wsg8P8zWn9hv/buK00RP4WvlOyr/RBDiptyxVbkZQ=="],
 
     "preact": ["preact@10.29.1", "", {}, "sha512-gQCLc/vWroE8lIpleXtdJhTFDogTdZG9AjMUpVkDf2iTCNwYNWA+u16dL41TqUDJO4gm2IgrcMv3uTpjd4Pwmg=="],
 
@@ -1830,6 +1892,8 @@
     "wordwrap": ["wordwrap@1.0.0", "", {}, "sha512-gvVzJFlPycKc5dZN4yPkP8w7Dc37BtP1yczEneOb4uq34pXZcvrtRTmWV8W+Ume+XCxKgbjM+nevkyFPMybd4Q=="],
 
     "wrappy": ["wrappy@1.0.2", "", {}, "sha512-l4Sp/DRseor9wL6EvV2+TuQn63dMkPjZ/sp9XkghTEbV9KlPS1xUsZ3u7/IQO4wxtcFB4bgpQPRcR3QCvezPcQ=="],
+
+    "xtend": ["xtend@4.0.2", "", {}, "sha512-LKYU1iAXJXUgAXn9URjiu+MWhyUXHsvfp7mcuYm9dSUKK0/CjtrUwFAxD82/mCWbtLsGjFIad0wIsod4zrTAEQ=="],
 
     "yahoo-finance2": ["yahoo-finance2@2.14.2", "", { "dependencies": { "@sinclair/typebox": "^0.32.27", "@types/tough-cookie": "^4.0.2", "tough-cookie": "^4.1.2", "tough-cookie-file-store": "^2.0.3" }, "bin": { "yahoo-finance": "bin/yahoo-finance.js" } }, "sha512-qmqWv2OE5uFAHl0Cjpt+0lJQ7lxnXI65HZCgN9l3wUEKHuderYqL24+oy/g7jIhcsESz9C+uG8tbLcWyE1FN5A=="],
 

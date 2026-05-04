@@ -155,6 +155,18 @@ export interface EntityMemoryStore {
     delete(entityId: string, namespace?: string): Promise<boolean>;
 }
 
+/** Store for agent decision logs */
+export interface DecisionLogStore {
+    add(log: Omit<DecisionLog, 'id' | 'createdAt'>): Promise<DecisionLog>;
+    get(id: string): Promise<DecisionLog | null>;
+    list(agentId?: string, sessionId?: string, limit?: number): Promise<DecisionLog[]>;
+    search(query: string, agentId?: string, limit?: number): Promise<DecisionLog[]>;
+    update(id: string, updates: Partial<Pick<DecisionLog, 'outcome' | 'outcomeQuality'>>): Promise<boolean>;
+    delete(id: string): Promise<boolean>;
+    /** Prune decisions older than maxAgeDays. Returns count deleted. */
+    prune(agentId?: string, maxAgeDays?: number): Promise<number>;
+}
+
 /** Generic learning store — every specialised store satisfies this for recall/process */
 export interface LearningStore {
     recall(opts: LearningRecallOptions): Promise<unknown>;

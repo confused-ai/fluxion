@@ -29,6 +29,7 @@ import type {
     MultiModalInput,
 } from './types.js';
 import type { RunnerConfig, Tool, RetryPolicy, LLMProvider } from './runner/types.js';
+import type { AgentDb } from '@confused-ai/db';
 
 // ── Session store interface (ISP — minimal, only what factory needs) ──────────
 
@@ -77,6 +78,19 @@ export interface CreateAgentOptions {
      * - `SessionStore` → custom store (sqlite, redis, etc.)
      */
     sessionStore?: SessionStore | false;
+
+    /**
+     * Unified agent database. When provided:
+     *   - Sessions are persisted and restored across runs (takes priority over `sessionStore`)
+     *   - Every run is recorded as a trace (non-blocking — trace failures never throw)
+     *
+     * Pass any `AgentDb` backend:
+     * ```ts
+     * import { SqliteAgentDb } from '@confused-ai/db';
+     * createAgent({ db: new SqliteAgentDb(), ... });
+     * ```
+     */
+    db?: AgentDb;
 
     // ── Limits ────────────────────────────────────────────────────────────────
     maxSteps?:   number;
@@ -273,6 +287,7 @@ export function createAgent(options: CreateAgentOptions): Agent {
         options.sessionStore === false
             ? null
             : (options.sessionStore ?? new InMemorySessionStore());
+    const db: AgentDb | null = options.db ?? null;
 
     const runnerConfig: RunnerConfig = {
         name:         options.name,
@@ -298,6 +313,7 @@ export function createAgent(options: CreateAgentOptions): Agent {
         void mergeHooks(options.hooks, perRunHooks); // merged hooks reserved for future runner integration
 
         // Build message history — O(history length) at most
+        let existingSessionRow: Awaited<ReturnType<AgentDb['getSession']>> = null;
         let messages: Message[] | undefined;
 
         if (inlineMessages?.length) {
@@ -306,14 +322,31 @@ export function createAgent(options: CreateAgentOptions): Agent {
                 ...inlineMessages,
                 userMessage,
             ];
-        } else if (sessionId && sessionStore) {
-            const session = await sessionStore.get(sessionId);
-            const history = session?.messages ?? [];
-            messages = [
-                { role: 'system', content: options.instructions },
-                ...history,
-                userMessage,
-            ];
+        } else if (sessionId) {
+            // db takes priority over legacy sessionStore
+            if (db) {
+                existingSessionRow = await db.getSession(sessionId);
+                let history: Message[] = [];
+                if (existingSessionRow?.session_data) {
+                    try {
+                        const sd = JSON.parse(existingSessionRow.session_data) as { messages?: Message[] };
+                        history = sd.messages ?? [];
+                    } catch { /* ignore */ }
+                }
+                messages = [
+                    { role: 'system', content: options.instructions },
+                    ...history,
+                    userMessage,
+                ];
+            } else if (sessionStore) {
+                const session = await sessionStore.get(sessionId);
+                const history = session?.messages ?? [];
+                messages = [
+                    { role: 'system', content: options.instructions },
+                    ...history,
+                    userMessage,
+                ];
+            }
         }
 
         const runnerRunConfig = {
@@ -333,12 +366,50 @@ export function createAgent(options: CreateAgentOptions): Agent {
             ...(runOptions?.onStep !== undefined && { onStep: runOptions.onStep }),
         };
 
+        const startMs = Date.now();
         const result = await runner.run(runnerRunConfig, streamHooks);
+        const endMs  = Date.now();
 
         // Persist session — O(n messages), unavoidable for correctness
-        if (sessionId && sessionStore && result.messages.length) {
+        if (sessionId && result.messages.length) {
             const toSave = result.messages.filter((m: Message) => m.role !== 'system');
-            await sessionStore.update(sessionId, { messages: toSave });
+            if (db) {
+                // Merge with existing session_data to preserve other keys (e.g. session_name)
+                const existingSd: Record<string, unknown> = existingSessionRow?.session_data
+                    ? (JSON.parse(existingSessionRow.session_data) as Record<string, unknown>)
+                    : {};
+                await db.upsertSession({
+                    sessionId,
+                    sessionType: (existingSessionRow?.session_type ?? 'agent') as 'agent' | 'team' | 'workflow',
+                    agentId: options.name,
+                    ...(userId !== undefined && { userId }),
+                    sessionData: { ...existingSd, messages: toSave },
+                });
+            } else if (sessionStore) {
+                await sessionStore.update(sessionId, { messages: toSave });
+            }
+        }
+
+        // Record trace — failures are swallowed so they never break the agent
+        if (db) {
+            const traceId = result.runId ?? runId ?? `${String(Date.now())}-${Math.random().toString(36).slice(2, 9)}`;
+            void db.upsertTrace({
+                trace_id:    traceId,
+                run_id:      runId ?? null,
+                session_id:  sessionId ?? null,
+                user_id:     userId ?? null,
+                agent_id:    options.name,
+                name:        `${options.name}:run`,
+                status:      result.finishReason === 'error' ? 'error' : 'ok',
+                start_time:  new Date(startMs).toISOString(),
+                end_time:    new Date(endMs).toISOString(),
+                duration_ms: endMs - startMs,
+                metadata:    JSON.stringify({
+                    steps:        result.steps,
+                    finishReason: result.finishReason,
+                    usage:        result.usage ?? null,
+                }),
+            });
         }
 
         return result;
@@ -390,6 +461,17 @@ export function createAgent(options: CreateAgentOptions): Agent {
         },
 
         async createSession(userId?: string): Promise<string> {
+            if (db) {
+                const id = `session-${String(Date.now())}-${Math.random().toString(36).slice(2, 7)}`;
+                await db.upsertSession({
+                    sessionId:   id,
+                    sessionType: 'agent',
+                    agentId:     options.name,
+                    ...(userId !== undefined && { userId }),
+                    runs: [],
+                });
+                return id;
+            }
             if (!sessionStore) {
                 throw new ConfigError(
                     `createAgent("${options.name}"): Cannot create a session — sessionStore is disabled. ` +
@@ -405,6 +487,14 @@ export function createAgent(options: CreateAgentOptions): Agent {
         },
 
         async getSessionMessages(sessionId: string): Promise<Message[]> {
+            if (db) {
+                const row = await db.getSession(sessionId);
+                if (!row?.session_data) return [];
+                try {
+                    const sd = JSON.parse(row.session_data) as { messages?: Message[] };
+                    return sd.messages ?? [];
+                } catch { return []; }
+            }
             if (!sessionStore) {
                 throw new ConfigError(
                     `createAgent("${options.name}"): getSessionMessages requires a session store.`,

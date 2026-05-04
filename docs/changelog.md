@@ -13,7 +13,27 @@ The authoritative `CHANGELOG.md` lives in the repository root.
 [View on GitHub →](https://github.com/confused-ai/confused-ai/blob/main/CHANGELOG.md)
 :::
 
-## v1.1.6 — Current
+## v1.1.7 — Current
+
+### Added
+
+- **`DbScheduleStore`** (`@confused-ai/scheduler`) — bridges `ScheduleManager` with any `AgentDb` backend. Persist schedules to SQLite, Postgres, MySQL, MongoDB, Redis, DynamoDB, or Turso with no custom glue code. See [Scheduler → Production persistence](./guide/scheduler.md).
+- **DB health in `/health` endpoint** — `createHttpService` now accepts a `db?: AgentDb` option. When provided, `GET /health` (and `/v1/health`) runs a live `db.health()` probe. Returns HTTP 503 with `{ status: 'degraded' }` when the database is unreachable.
+
+### Fixed
+
+- **`@confused-ai/db` — `uuid()` security** — all 8 backends (InMemory, SQLite, Postgres, MongoDB, Redis, JSON, MySQL, DynamoDB, Turso) now generate IDs with `crypto.randomUUID()` instead of the previous `Math.random()`-based implementation.
+- **`@confused-ai/db` — `init()` race condition** — concurrent callers no longer double-initialize the connection. All async backends (Postgres, MongoDB, MySQL, DynamoDB, Turso) now share a single `_initPromise` guard.
+- **`PostgresAgentDb`** — `getKnowledgeItems()`, `getTrace()`, and `getTraces()` now correctly re-serialize JSONB `content` and `metadata` columns to string (the `pg` driver returns these as parsed objects).
+- **`MongoAgentDb`** — all `findOne` and `find` calls now include `{ projection: { _id: 0 } }` so MongoDB's internal `_id` field is never included in returned rows.
+- **`DynamoDbAgentDb`** — constructor now calls `validateTableNames()` to catch invalid table names at construction time instead of silently failing at runtime.
+- **`DbSessionStore`** — `now()` helper now returns Unix epoch seconds (`Math.floor(Date.now() / 1000)`) to match the `AgentDb` timestamp contract (was returning milliseconds, causing `created_at`/`updated_at` to be off by ×1000).
+- **`TursoAgentDb`** — single-row casts (`LibSqlRow → SessionRow`, `MemoryRow`, etc.) now use the `as unknown as T` double-cast pattern, fixing TypeScript strict-mode errors.
+- **`PostgresAgentDb`** — `close()` method was accidentally stripped during a refactor; restored.
+
+---
+
+## v1.1.6
 
 ### Changed
 

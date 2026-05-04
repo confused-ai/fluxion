@@ -118,6 +118,21 @@ export interface CreateHttpServiceOptions {
     rateLimit?: {
         check(key: string): Promise<void> | void;
     };
+    /**
+     * Optional AgentDb instance. When provided, the `/health` endpoint includes
+     * a live database connectivity check (`db.health()`). If the DB is unreachable,
+     * the health endpoint returns HTTP 503 with `{ status: 'degraded', db: { ok: false } }`.
+     *
+     * @example
+     * ```ts
+     * import { SqliteAgentDb } from '@confused-ai/db';
+     * createHttpService({
+     *   agents: { assistant },
+     *   db: new SqliteAgentDb({ path: './agent.db' }),
+     * });
+     * ```
+     */
+    db?: import('@confused-ai/db').AgentDb;
 }
 
 export interface RequestAuditEntry {

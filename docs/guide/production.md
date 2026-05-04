@@ -500,6 +500,44 @@ if (!hasRole(auth, 'admin')) throw new Error('Forbidden');
 | `maxBodyBytes` | `number` | `1_048_576` | Max request body size (bytes); returns 413 on exceed |
 | `cors` | `string` | — | `Access-Control-Allow-Origin` header |
 | `tracing` | `boolean` | `false` | In-memory request audit log |
+| `db` | `AgentDb` | — | AgentDb instance; enables live DB health check on `/health` |
+
+### Database health check
+
+Pass a `db` option to `createHttpService` to include a live database connectivity check in the `/health` and `/v1/health` endpoints. When the DB is unreachable the endpoint returns HTTP **503** with `status: 'degraded'`:
+
+```ts
+import { createHttpService } from 'confused-ai/serve';
+import { SqliteAgentDb } from '@confused-ai/db';
+
+const db      = new SqliteAgentDb({ path: './agent.db' });
+const service = createHttpService({
+  agents: { assistant },
+  db,
+});
+```
+
+Example healthy response:
+
+```json
+{
+  "status": "ok",
+  "service": "confused-ai",
+  "time": "2026-05-04T12:00:00.000Z",
+  "db": { "ok": true, "latencyMs": 3 }
+}
+```
+
+Example degraded response (HTTP 503):
+
+```json
+{
+  "status": "degraded",
+  "service": "confused-ai",
+  "time": "2026-05-04T12:00:00.000Z",
+  "db": { "ok": false, "latencyMs": 0, "error": "Connection refused" }
+}
+```
 
 ---
 

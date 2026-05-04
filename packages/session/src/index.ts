@@ -17,3 +17,6 @@ export type {
   SessionMetadata,
 } from './types.js';
 export { SessionState } from './types.js';
+
+// ── AgentDb-backed store ────────────────────────────────────────────────────
+export { DbSessionStore, createDbSessionStore } from './db-store.js';
